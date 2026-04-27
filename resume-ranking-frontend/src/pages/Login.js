@@ -22,7 +22,10 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1>SmartRank</h1>
+        <div className="login-logo-wrap">
+          <img src="/image.png" alt="Resume Match" className="login-logo" />
+        </div>
+        <h1>Resume Match</h1>
         <p className="login-subtitle">Smart Resume Ranking System</p>
 
         <div className="tab-toggle">

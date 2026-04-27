@@ -8,7 +8,8 @@ export default function Navbar({ page, setPage }) {
   return (
     <nav className="navbar">
       <div className="navbar-brand" onClick={() => setPage(isHR ? "dashboard" : "jobs")}>
-        SmartRank
+        <img src="/image.png" alt="Resume Match" className="navbar-logo" />
+        Resume Match
       </div>
       {user && (
         <div className="navbar-links">

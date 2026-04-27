@@ -747,3 +747,28 @@ body {
 }
 
 .interests-actions .btn-secondary { margin-top: 0; }
+
+/* ── LOGO ── */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-logo {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+}
+
+.login-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.login-logo {
+  height: 72px;
+  width: 72px;
+  object-fit: contain;
+}

@@ -70,9 +70,6 @@ export default function Jobs({ setPage, setApplyJob }) {
 
       <div className="jobs-grid">
         {jobs.map((job) => {
-          const appCount = isHR
-            ? useApp ? null : 0
-            : null;
           const alreadyApplied = appliedJobIds.includes(job.id);
           return (
             <div key={job.id} className="job-card">
