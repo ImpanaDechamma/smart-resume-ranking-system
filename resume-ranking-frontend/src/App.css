@@ -631,3 +631,119 @@ body {
   .rankings-table { font-size: 0.75rem; }
   .jobs-grid { grid-template-columns: 1fr; }
 }
+
+/* ── INTERESTS PAGE ── */
+.interests-container {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.interests-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 720px;
+  box-shadow: 0 4px 24px rgba(156, 107, 60, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.interests-header {
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.interests-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+
+.interests-header p {
+  font-size: 0.875rem;
+  color: var(--text-lt);
+  line-height: 1.5;
+}
+
+.interests-body {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.interests-body::-webkit-scrollbar { width: 5px; }
+.interests-body::-webkit-scrollbar-track { background: var(--bg); }
+.interests-body::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 4px; }
+
+.interest-group { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.interest-category {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--text-md);
+}
+
+.interest-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.interest-chip {
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-md);
+  font-size: 0.82rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.interest-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-lt);
+}
+
+.interest-chip.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.interests-footer {
+  padding: 1.2rem 2rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.selected-count {
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.interests-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.interests-actions .btn-secondary { margin-top: 0; }

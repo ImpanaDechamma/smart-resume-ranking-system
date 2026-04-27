@@ -8,15 +8,17 @@ import Jobs from "./pages/Jobs";
 import Apply from "./pages/Apply";
 import MyApplications from "./pages/MyApplications";
 import Rankings from "./pages/Rankings";
+import Interests from "./pages/Interests";
 import "./App.css";
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, justRegistered } = useAuth();
   const isHR = user?.role === "hr";
   const [page, setPage] = useState(isHR ? "dashboard" : "jobs");
   const [applyJob, setApplyJob] = useState(null);
 
   if (!user) return <Login />;
+  if (justRegistered && !isHR) return <Interests />;
 
   return (
     <div className="app">
