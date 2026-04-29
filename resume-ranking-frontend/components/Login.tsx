@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/button";
 interface LoginProps {
   onBack?: () => void;
   defaultMode?: "login" | "register";
-  onLoginSuccess?: (role: "hr" | "candidate") => void;
 }
 
-export default function Login({ onBack, defaultMode = "login", onLoginSuccess }: LoginProps) {
+export default function Login({ onBack, defaultMode = "login" }: LoginProps) {
   const [isLogin, setIsLogin] = useState(defaultMode === "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,9 +28,6 @@ export default function Login({ onBack, defaultMode = "login", onLoginSuccess }:
       const success = login(email, password);
       if (!success) {
         setError("Invalid email or password");
-      } else {
-        // role is determined by AuthContext after login
-        onLoginSuccess?.(email.includes("hr") ? "hr" : "candidate");
       }
     } else {
       if (!name.trim()) {

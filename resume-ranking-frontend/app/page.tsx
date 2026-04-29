@@ -17,12 +17,13 @@ import Interests from "@/components/Interests";
 function AppContent() {
   const { user, justRegistered } = useAuth();
   const isHR = user?.role === "hr";
-  const [page, setPage] = useState<string | null>(null);
+  const [page, setPage] = useState(isHR ? "dashboard" : "jobs");
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [showAuth, setShowAuth] = useState<"login" | "register" | null>(null);
 
-  // Determine effective page based on role when page not yet set
-  const effectivePage = page ?? (isHR ? "dashboard" : "jobs");
+  if (user && page === "jobs" && isHR && page !== "dashboard") {
+    setPage("dashboard");
+  }
 
   if (!user && !showAuth) {
     return (
@@ -34,26 +35,20 @@ function AppContent() {
   }
 
   if (!user) {
-    return (
-      <Login
-        onBack={() => setShowAuth(null)}
-        defaultMode={showAuth || "login"}
-        onLoginSuccess={(role) => setPage(role === "hr" ? "dashboard" : "jobs")}
-      />
-    );
+    return <Login onBack={() => setShowAuth(null)} defaultMode={showAuth || "login"} />;
   }
 
   if (justRegistered && !isHR) return <Interests />;
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar page={effectivePage} setPage={setPage} />
+      <Navbar page={page} setPage={setPage} />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {effectivePage === "dashboard" && isHR && <HRDashboard setPage={setPage} />}
-        {effectivePage === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} />}
-        {effectivePage === "apply" && !isHR && <Apply job={applyJob} setPage={setPage} />}
-        {effectivePage === "my-applications" && !isHR && <MyApplications setPage={setPage} />}
-        {effectivePage === "rankings" && isHR && <Rankings />}
+        {isHR && page === "dashboard" && <HRDashboard setPage={setPage} />}
+        {page === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} />}
+        {!isHR && page === "apply" && <Apply job={applyJob} setPage={setPage} />}
+        {!isHR && page === "my-applications" && <MyApplications setPage={setPage} />}
+        {isHR && page === "rankings" && <Rankings />}
       </main>
     </div>
   );
