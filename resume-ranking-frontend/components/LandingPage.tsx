@@ -125,30 +125,30 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border/40 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
               <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-semibold text-foreground">ResumeRank</span>
+            <span className="text-xl font-bold text-foreground tracking-tight">ResumeRank</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Features
             </a>
-            <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               How It Works
             </a>
-            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Testimonials
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={onLogin} className="text-foreground">
+            <Button variant="ghost" onClick={onLogin} className="text-foreground hover:bg-secondary/80 font-medium">
               Sign In
             </Button>
-            <Button onClick={onGetStarted} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button onClick={onGetStarted} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-primary/25 transition-all font-medium rounded-full px-6">
               Get Started
             </Button>
           </div>
@@ -157,63 +157,69 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-        {/* Background Image */}
+        {/* Background Elements */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/images/hero-bg.jpg"
             alt="Professional team collaboration"
             fill
-            className="object-cover opacity-15"
+            className="object-cover opacity-[0.03]"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/95 to-background" />
+          
+          {/* Animated Glow Orbs */}
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] mix-blend-screen opacity-50 animate-pulse duration-10000" />
+          <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[150px] mix-blend-screen opacity-50" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary border border-border mb-8">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm text-muted-foreground">
-                Trusted by 500+ companies worldwide
+          <div className="max-w-4xl mx-auto text-center pt-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 backdrop-blur-md border border-border/50 mb-8 shadow-sm transition-transform hover:scale-105 cursor-default">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-sm font-medium text-foreground/80">
+                Trusted by 500+ innovative companies
               </span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6 text-balance">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6 text-balance leading-tight">
               Smart Resume Ranking
               <br />
-              <span className="text-muted-foreground">for Modern Hiring</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-500">
+                for Modern Hiring
+              </span>
             </h1>
 
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
               Transform your recruitment process with AI-powered resume screening.
               Find the perfect candidates faster with intelligent matching and
               unbiased ranking.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
               <Button
                 size="lg"
                 onClick={onGetStarted}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-lg rounded-full"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-lg rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300 group"
               >
                 Start Free Trial
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-border text-foreground hover:bg-secondary px-8 py-6 text-lg rounded-full"
+                className="bg-background/50 backdrop-blur-md border-border/50 text-foreground hover:bg-secondary/80 px-8 py-6 text-lg rounded-full hover:-translate-y-1 transition-all duration-300"
               >
                 Watch Demo
               </Button>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 p-6 md:p-8 rounded-3xl bg-secondary/30 backdrop-blur-sm border border-border/40 shadow-sm">
               {stats.map((stat) => (
                 <div key={stat.label} className="text-center">
-                  <div className="text-4xl font-bold text-foreground mb-1">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <div className="text-4xl font-bold text-foreground mb-2 bg-clip-text">{stat.value}</div>
+                  <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -222,19 +228,20 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
       </section>
 
       {/* Dashboard Preview */}
-      <section className="py-20 px-6 bg-secondary/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border">
+      <section className="relative py-20 px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent z-0" />
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border/50 ring-1 ring-white/10 group">
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent z-10" />
             <Image
               src="/images/dashboard-preview.jpg"
               alt="ResumeRank Dashboard Preview"
               width={1400}
               height={800}
-              className="w-full object-cover"
+              className="w-full object-cover transform group-hover:scale-[1.02] transition-transform duration-700 ease-out"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-            <div className="absolute bottom-8 left-8 right-8">
-              <p className="text-lg text-foreground font-medium">
+            <div className="absolute bottom-8 left-8 right-8 z-20">
+              <p className="text-xl text-foreground font-semibold drop-shadow-md">
                 Powerful dashboard to manage all your recruitment needs
               </p>
             </div>
@@ -243,57 +250,48 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section id="features" className="py-24 px-6 relative">
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-foreground mb-4 tracking-tight">
               Everything You Need
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
               Powerful features to streamline your hiring process from start to finish
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {features.map((feature, index) => (
               <div
                 key={feature.title}
-                className={`p-8 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                className={`group relative p-8 rounded-3xl border transition-all duration-500 cursor-pointer overflow-hidden ${
                   activeFeature === index
-                    ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
-                    : "bg-card border-border hover:border-primary/50 hover:shadow-md"
-                }`}
+                    ? "bg-card/80 border-primary/50 shadow-xl shadow-primary/10 -translate-y-2"
+                    : "bg-card/40 border-border/40 hover:bg-card/60 hover:border-primary/30 hover:-translate-y-1 hover:shadow-lg"
+                } backdrop-blur-sm`}
                 onMouseEnter={() => setActiveFeature(index)}
               >
-                <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${
-                    activeFeature === index
-                      ? "bg-primary-foreground/20"
-                      : "bg-secondary"
-                  }`}
-                >
-                  <feature.icon
-                    className={`w-6 h-6 ${
-                      activeFeature === index ? "text-primary-foreground" : "text-foreground"
+                {/* Glow Effect */}
+                <div className={`absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 transition-opacity duration-500 ${activeFeature === index ? 'opacity-100' : 'group-hover:opacity-50'}`} />
+                
+                <div className="relative z-10">
+                  <div
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300 ${
+                      activeFeature === index
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                        : "bg-secondary text-foreground group-hover:bg-primary/20 group-hover:text-primary"
                     }`}
-                  />
+                  >
+                    <feature.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 text-foreground tracking-tight">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground font-medium leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3
-                  className={`text-xl font-semibold mb-3 ${
-                    activeFeature === index ? "text-primary-foreground" : "text-foreground"
-                  }`}
-                >
-                  {feature.title}
-                </h3>
-                <p
-                  className={
-                    activeFeature === index
-                      ? "text-primary-foreground/80"
-                      : "text-muted-foreground"
-                  }
-                >
-                  {feature.description}
-                </p>
               </div>
             ))}
           </div>

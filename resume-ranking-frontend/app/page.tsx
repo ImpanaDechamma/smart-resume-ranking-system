@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
 import { Job } from "@/context/AppContext";
@@ -21,9 +21,12 @@ function AppContent() {
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [showAuth, setShowAuth] = useState<"login" | "register" | null>(null);
 
-  if (user && page === "jobs" && isHR && page !== "dashboard") {
-    setPage("dashboard");
-  }
+  
+  useEffect(() => {
+    if (user) {
+      setPage(isHR ? "dashboard" : "jobs");
+    }
+  }, [user, isHR]);
 
   if (!user && !showAuth) {
     return (
@@ -43,7 +46,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar page={page} setPage={setPage} />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pt-32 pb-12 sm:px-6 lg:px-8 relative z-10">
         {isHR && page === "dashboard" && <HRDashboard setPage={setPage} />}
         {page === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} />}
         {!isHR && page === "apply" && <Apply job={applyJob} setPage={setPage} />}
