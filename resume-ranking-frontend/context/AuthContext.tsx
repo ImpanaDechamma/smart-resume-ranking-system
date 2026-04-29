@@ -33,7 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (acc) => acc.email === email && acc.password === password
     );
     if (account) {
-      setUser({ email: account.email, role: account.role, name: account.name });
+      const u = { email: account.email, role: account.role, name: account.name };
+      setUser(u);
       setJustRegistered(false);
       return true;
     }
