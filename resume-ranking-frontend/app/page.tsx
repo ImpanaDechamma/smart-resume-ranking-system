@@ -21,7 +21,7 @@ function AppContent() {
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [showAuth, setShowAuth] = useState<"login" | "register" | null>(null);
 
-  if (user && page === "jobs" && isHR && page !== "dashboard") {
+  if (user && isHR && page !== "dashboard" && page !== "rankings") {
     setPage("dashboard");
   }
 
