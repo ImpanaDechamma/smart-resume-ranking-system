@@ -23,6 +23,8 @@ export interface Application {
   candidateName: string;
   candidateEmail: string;
   resumeFile?: string;
+  candidateSkills?: string[];
+  missingSkills?: string[];
 }
 
 interface AppContextType {
@@ -87,6 +89,8 @@ const initialApplications: Application[] = [
     score: 92,
     candidateName: "Alice Chen",
     candidateEmail: "alice@email.com",
+    candidateSkills: ["React", "TypeScript", "CSS", "Node.js", "Redux"],
+    missingSkills: [],
   },
   {
     id: "app2",
@@ -98,6 +102,8 @@ const initialApplications: Application[] = [
     score: 85,
     candidateName: "Bob Wilson",
     candidateEmail: "bob@email.com",
+    candidateSkills: ["React", "CSS", "HTML"],
+    missingSkills: ["TypeScript", "Node.js"],
   },
   {
     id: "app3",
@@ -109,6 +115,8 @@ const initialApplications: Application[] = [
     score: 78,
     candidateName: "Carol Davis",
     candidateEmail: "carol@email.com",
+    candidateSkills: ["Python", "Django", "SQL"],
+    missingSkills: ["React", "PostgreSQL"],
   },
 ];
 
@@ -130,6 +138,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
 
+    const score = Math.floor(Math.random() * 30) + 70;
+    
+    // Simulate skill extraction and gap analysis based on score
+    // Higher score means more skills matched
+    const matchRatio = score / 100;
+    const shuffledSkills = [...job.skills].sort(() => 0.5 - Math.random());
+    const matchCount = Math.ceil(job.skills.length * matchRatio);
+    const candidateSkills = shuffledSkills.slice(0, matchCount);
+    const missingSkills = job.skills.filter(s => !candidateSkills.includes(s));
+
     const newApplication: Application = {
       id: `app${Date.now()}`,
       jobId,
@@ -137,10 +155,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       company: job.company,
       appliedDate: new Date().toISOString().split("T")[0],
       status: "pending",
-      score: Math.floor(Math.random() * 30) + 70,
+      score,
       candidateName,
       candidateEmail,
       resumeFile,
+      candidateSkills,
+      missingSkills,
     };
 
     setApplications((prev) => [...prev, newApplication]);

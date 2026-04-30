@@ -116,6 +116,15 @@ export default function Rankings() {
                           <span className="mx-1">•</span>
                           {new Date(app.appliedDate).toLocaleDateString()}
                         </div>
+                        {app.missingSkills && app.missingSkills.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {app.missingSkills.map((skill: string) => (
+                              <span key={skill} className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-600 rounded">
+                                Lacks: {skill}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -176,6 +185,18 @@ function PodiumCard({ app, rank, updateApplicationStatus }: { app: any, rank: nu
         <div className="text-center space-y-1">
           <h4 className="text-xl font-extrabold text-foreground truncate px-2">{app.candidateName}</h4>
           <p className="text-xs font-semibold text-muted-foreground truncate">{app.candidateEmail}</p>
+          {app.missingSkills && app.missingSkills.length > 0 && (
+             <div className="flex flex-wrap justify-center gap-1 pt-1">
+               {app.missingSkills.slice(0, 2).map((skill: string) => (
+                 <span key={skill} className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20">
+                   Needs {skill}
+                 </span>
+               ))}
+               {app.missingSkills.length > 2 && (
+                 <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20">+{app.missingSkills.length - 2}</span>
+               )}
+             </div>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-2 my-auto">
