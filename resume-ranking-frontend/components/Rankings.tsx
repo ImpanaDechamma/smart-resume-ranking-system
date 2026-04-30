@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { Trophy, Mail, FileText, Medal, Crown, Star } from "lucide-react";
 
-export default function Rankings() {
+export default function Rankings({ initialJobId }: { initialJobId?: string }) {
   const { jobs, getApplicationsForJob, updateApplicationStatus } = useApp();
-  const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
+  const [selectedJobId, setSelectedJobId] = useState(initialJobId || jobs[0]?.id || "");
+
+  useEffect(() => {
+    if (initialJobId) setSelectedJobId(initialJobId);
+  }, [initialJobId]);
 
   const applications = getApplicationsForJob(selectedJobId)
     .sort((a, b) => b.score - a.score);

@@ -19,6 +19,7 @@ function AppContent() {
   const isHR = user?.role === "hr";
   const [page, setPage] = useState(isHR ? "dashboard" : "jobs");
   const [applyJob, setApplyJob] = useState<Job | null>(null);
+  const [rankingJobId, setRankingJobId] = useState<string>("");
   const [showAuth, setShowAuth] = useState<"login" | "register" | null>(null);
 
   
@@ -48,10 +49,10 @@ function AppContent() {
       <Navbar page={page} setPage={setPage} />
       <main className="mx-auto max-w-7xl px-4 pt-32 pb-12 sm:px-6 lg:px-8 relative z-10">
         {isHR && page === "dashboard" && <HRDashboard setPage={setPage} />}
-        {page === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} />}
+        {page === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} setRankingJobId={setRankingJobId} />}
         {!isHR && page === "apply" && <Apply job={applyJob} setPage={setPage} />}
         {!isHR && page === "my-applications" && <MyApplications setPage={setPage} />}
-        {isHR && page === "rankings" && <Rankings />}
+        {isHR && page === "rankings" && <Rankings initialJobId={rankingJobId} />}
       </main>
     </div>
   );

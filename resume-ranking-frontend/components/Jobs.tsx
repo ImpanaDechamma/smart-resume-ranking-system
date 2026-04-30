@@ -8,9 +8,10 @@ import { Plus, Building2, Calendar, Users, ArrowRight, X, Sparkles, CheckCircle2
 interface JobsProps {
   setPage: (page: string) => void;
   setApplyJob: (job: Job | null) => void;
+  setRankingJobId: (id: string) => void;
 }
 
-export default function Jobs({ setPage, setApplyJob }: JobsProps) {
+export default function Jobs({ setPage, setApplyJob, setRankingJobId }: JobsProps) {
   const { jobs, applications, addJob } = useApp();
   const { user } = useAuth();
   const isHR = user?.role === "hr";
@@ -62,7 +63,7 @@ export default function Jobs({ setPage, setApplyJob }: JobsProps) {
             isHR={isHR}
             hasApplied={hasApplied(job.id)}
             onApply={() => handleApply(job)}
-            onViewRankings={() => setPage("rankings")}
+            onViewRankings={() => { setRankingJobId(job.id); setPage("rankings"); }}
           />
         ))}
       </div>
