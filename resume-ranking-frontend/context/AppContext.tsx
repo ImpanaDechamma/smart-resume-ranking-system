@@ -141,12 +141,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const score = Math.floor(Math.random() * 30) + 70;
     
     // Simulate skill extraction and gap analysis based on score
-    // Higher score means more skills matched
+    // Higher score means more skills matched, but we use floor to ensure realistic skill gaps
     const matchRatio = score / 100;
     const shuffledSkills = [...job.skills].sort(() => 0.5 - Math.random());
-    const matchCount = Math.ceil(job.skills.length * matchRatio);
+    // Use floor so a score of 80% on 4 skills = 3 skills, leaving 1 missing
+    const matchCount = Math.floor(job.skills.length * matchRatio);
     const candidateSkills = shuffledSkills.slice(0, matchCount);
     const missingSkills = job.skills.filter(s => !candidateSkills.includes(s));
+    
+    // Ensure at least one missing skill if the score is not perfect (for demonstration)
+    if (missingSkills.length === 0 && score < 100 && job.skills.length > 0) {
+      missingSkills.push(shuffledSkills[shuffledSkills.length - 1]);
+      candidateSkills.pop();
+    }
 
     const newApplication: Application = {
       id: `app${Date.now()}`,
