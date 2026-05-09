@@ -1,7 +1,9 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { FileText, LayoutDashboard, Briefcase, ClipboardList, BarChart3, LogOut } from "lucide-react";
+import { FileText, LayoutDashboard, Briefcase, ClipboardList, BarChart3, LogOut, Bell } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { useState } from "react";
 
 interface NavbarProps {
   page: string;
@@ -10,6 +12,8 @@ interface NavbarProps {
 
 export default function Navbar({ page, setPage }: NavbarProps) {
   const { user, logout } = useAuth();
+  const { notifications, clearNotifications } = useApp();
+  const [showNotifications, setShowNotifications] = useState(false);
   const isHR = user?.role === "hr";
 
   return (
@@ -73,12 +77,49 @@ export default function Navbar({ page, setPage }: NavbarProps) {
 
         {/* User Actions */}
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex flex-col items-end">
-            <span className="text-sm font-bold text-foreground leading-none">{user?.name}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary mt-1">
-              {user?.role}
-            </span>
+          {/* Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
+                notifications.length > 0 
+                ? "bg-primary/10 text-primary animate-pulse" 
+                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              <Bell className="h-4 w-4" />
+              {notifications.length > 0 && (
+                <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-background rounded-full" />
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute top-12 right-0 w-80 bg-card/90 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl z-[70] p-4 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-bold text-foreground">Notifications</h4>
+                  <button 
+                    onClick={clearNotifications}
+                    className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
+                  >
+                    Clear all
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {notifications.length > 0 ? (
+                    notifications.map((n) => (
+                      <div key={n.id} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
+                        <p className="text-xs font-bold text-foreground">{n.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">{n.message}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-center text-muted-foreground py-4">No new notifications</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="h-8 w-[1px] bg-border/50 hidden md:block" />
           <button
             onClick={logout}

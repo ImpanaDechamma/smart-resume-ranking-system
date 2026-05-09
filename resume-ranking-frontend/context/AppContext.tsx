@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 export interface Job {
   id: string;
@@ -30,158 +31,195 @@ export interface Application {
 interface AppContextType {
   jobs: Job[];
   applications: Application[];
-  addJob: (job: Omit<Job, "id" | "applicants" | "posted">) => void;
-  applyToJob: (jobId: string, candidateName: string, candidateEmail: string, resumeFile: string) => void;
-  updateApplicationStatus: (appId: string, status: Application["status"]) => void;
+  addJob: (job: Omit<Job, "id" | "applicants" | "posted">) => Promise<void>;
+  applyToJob: (jobId: string, candidateName: string, candidateEmail: string, resumeFile: File | string) => Promise<void>;
+  updateApplicationStatus: (appId: string, status: Application["status"]) => Promise<void>;
   getApplicationsForJob: (jobId: string) => Application[];
   getApplicationsForCandidate: (email: string) => Application[];
+  notifications: any[];
+  clearNotifications: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const initialJobs: Job[] = [
-  {
-    id: "1",
-    title: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    description: "We are looking for an experienced frontend developer with strong React skills to join our growing team.",
-    skills: ["React", "TypeScript", "CSS", "Node.js"],
-    posted: "2024-01-15",
-    applicants: 24,
-  },
-  {
-    id: "2",
-    title: "Full Stack Engineer",
-    company: "StartupXYZ",
-    description: "Join our fast-paced startup as a full stack engineer working on cutting-edge technology.",
-    skills: ["Python", "Django", "React", "PostgreSQL"],
-    posted: "2024-01-18",
-    applicants: 18,
-  },
-  {
-    id: "3",
-    title: "DevOps Engineer",
-    company: "CloudSystems",
-    description: "Looking for a DevOps engineer to help us scale our infrastructure and improve deployment processes.",
-    skills: ["AWS", "Docker", "Kubernetes", "CI/CD"],
-    posted: "2024-01-20",
-    applicants: 12,
-  },
-  {
-    id: "4",
-    title: "UI/UX Designer",
-    company: "DesignHub",
-    description: "Creative UI/UX designer needed to craft beautiful and intuitive user experiences.",
-    skills: ["Figma", "Adobe XD", "User Research", "Prototyping"],
-    posted: "2024-01-22",
-    applicants: 31,
-  },
-];
-
-const initialApplications: Application[] = [
-  {
-    id: "app1",
-    jobId: "1",
-    jobTitle: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    appliedDate: "2024-01-16",
-    status: "shortlisted",
-    score: 92,
-    candidateName: "Alice Chen",
-    candidateEmail: "alice@email.com",
-    candidateSkills: ["React", "TypeScript", "CSS", "Node.js", "Redux"],
-    missingSkills: [],
-  },
-  {
-    id: "app2",
-    jobId: "1",
-    jobTitle: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    appliedDate: "2024-01-17",
-    status: "reviewed",
-    score: 85,
-    candidateName: "Bob Wilson",
-    candidateEmail: "bob@email.com",
-    candidateSkills: ["React", "CSS", "HTML"],
-    missingSkills: ["TypeScript", "Node.js"],
-  },
-  {
-    id: "app3",
-    jobId: "2",
-    jobTitle: "Full Stack Engineer",
-    company: "StartupXYZ",
-    appliedDate: "2024-01-19",
-    status: "pending",
-    score: 78,
-    candidateName: "Carol Davis",
-    candidateEmail: "carol@email.com",
-    candidateSkills: ["Python", "Django", "SQL"],
-    missingSkills: ["React", "PostgreSQL"],
-  },
-];
-
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
-  const [applications, setApplications] = useState<Application[]>(initialApplications);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const { user } = useAuth();
 
-  const addJob = (job: Omit<Job, "id" | "applicants" | "posted">) => {
-    const newJob: Job = {
-      ...job,
-      id: Date.now().toString(),
-      applicants: 0,
-      posted: new Date().toISOString().split("T")[0],
+  // Fetch Jobs on mount
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/jobs");
+        if (res.ok) {
+          const data = await res.json();
+          setJobs(data.map((j: any) => ({
+            ...j,
+            id: j.id.toString(),
+          })));
+        }
+      } catch (err) {
+        console.error("Error fetching jobs:", err);
+      }
     };
-    setJobs((prev) => [...prev, newJob]);
-  };
+    fetchJobs();
+  }, []);
 
-  const applyToJob = (jobId: string, candidateName: string, candidateEmail: string, resumeFile: string) => {
-    const job = jobs.find((j) => j.id === jobId);
-    if (!job) return;
+  // Fetch Applications if user is logged in
+  useEffect(() => {
+    if (!user) return;
 
-    const score = Math.floor(Math.random() * 30) + 70;
-    
-    // Simulate skill extraction and gap analysis based on score
-    // Higher score means more skills matched, but we use floor to ensure realistic skill gaps
-    const matchRatio = score / 100;
-    const shuffledSkills = [...job.skills].sort(() => 0.5 - Math.random());
-    // Use floor so a score of 80% on 4 skills = 3 skills, leaving 1 missing
-    const matchCount = Math.floor(job.skills.length * matchRatio);
-    const candidateSkills = shuffledSkills.slice(0, matchCount);
-    const missingSkills = job.skills.filter(s => !candidateSkills.includes(s));
-    
-    // Ensure at least one missing skill if the score is not perfect (for demonstration)
-    if (missingSkills.length === 0 && score < 100 && job.skills.length > 0) {
-      missingSkills.push(shuffledSkills[shuffledSkills.length - 1]);
-      candidateSkills.pop();
+    const fetchApplications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        if (user.role === "candidate") {
+          const res = await fetch("http://localhost:5000/api/applications/my", { headers });
+          if (res.ok) {
+            const data = await res.json();
+            setApplications(data.map((app: any) => ({ ...app, candidateEmail: user.email })));
+          }
+        } else if (user.role === "hr") {
+          // Simplification: HR fetches applications for all jobs they created
+          // or we can fetch them per job when they click on a job.
+          // Since UI expects all applications in state for Dashboard, let's fetch for all jobs.
+          let allApps: Application[] = [];
+          for (const job of jobs) {
+            const res = await fetch(`http://localhost:5000/api/applications/job/${job.id}`, { headers });
+            if (res.ok) {
+              const data = await res.json();
+              allApps = [...allApps, ...data];
+            }
+          }
+          // Remove duplicates if any
+          const uniqueApps = Array.from(new Map(allApps.map((a) => [a.id, a])).values());
+          setApplications(uniqueApps);
+          
+          // Generate HR Notifications
+          const pendingCount = uniqueApps.filter(a => a.status === 'pending').length;
+          if (pendingCount > 0) {
+            setNotifications([{
+              id: 'hr-notif',
+              title: 'New Applications',
+              message: `You have ${pendingCount} new candidates waiting for review.`,
+              type: 'info'
+            }]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching applications:", err);
+      }
+    };
+
+    if (jobs.length > 0 || user.role === "candidate") {
+      fetchApplications();
     }
+  }, [user, jobs]);
 
-    const newApplication: Application = {
-      id: `app${Date.now()}`,
-      jobId,
-      jobTitle: job.title,
-      company: job.company,
-      appliedDate: new Date().toISOString().split("T")[0],
-      status: "pending",
-      score,
-      candidateName,
-      candidateEmail,
-      resumeFile,
-      candidateSkills,
-      missingSkills,
-    };
+  const addJob = async (job: Omit<Job, "id" | "applicants" | "posted">) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/jobs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: job.title,
+          company: job.company,
+          description: job.description,
+          skills: job.skills,
+        }),
+      });
 
-    setApplications((prev) => [...prev, newApplication]);
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === jobId ? { ...j, applicants: j.applicants + 1 } : j
-      )
-    );
+      if (res.ok) {
+        const data = await res.json();
+        const newJob: Job = {
+          ...job,
+          id: data.id.toString(),
+          applicants: 0,
+          posted: new Date().toISOString().split("T")[0],
+        };
+        setJobs((prev) => [newJob, ...prev]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const updateApplicationStatus = (appId: string, status: Application["status"]) => {
-    setApplications((prev) =>
-      prev.map((app) => (app.id === appId ? { ...app, status } : app))
-    );
+  const applyToJob = async (jobId: string, candidateName: string, candidateEmail: string, resumeFile: File | string) => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      const formData = new FormData();
+      if (resumeFile instanceof File) {
+        formData.append("resume", resumeFile);
+      } else {
+        console.error("Expected a File object for resume");
+        return;
+      }
+
+      const res = await fetch(`http://localhost:5000/api/applications/${jobId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        const newApp: Application = {
+          id: data.applicationId.toString(),
+          jobId,
+          jobTitle: jobs.find(j => j.id === jobId)?.title || "",
+          company: jobs.find(j => j.id === jobId)?.company || "",
+          appliedDate: new Date().toISOString().split("T")[0],
+          status: "pending",
+          score: 0,
+          candidateName,
+          candidateEmail,
+        };
+
+        setApplications((prev) => [...prev, newApp]);
+        setJobs((prev) =>
+          prev.map((j) =>
+            j.id === jobId ? { ...j, applicants: j.applicants + 1 } : j
+          )
+        );
+      } else {
+        console.error(await res.json());
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateApplicationStatus = async (appId: string, status: Application["status"]) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/applications/${appId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (res.ok) {
+        setApplications((prev) =>
+          prev.map((app) => (app.id === appId ? { ...app, status } : app))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const getApplicationsForJob = (jobId: string) => {
@@ -202,6 +240,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateApplicationStatus,
         getApplicationsForJob,
         getApplicationsForCandidate,
+        notifications,
+        clearNotifications: () => setNotifications([]),
       }}
     >
       {children}

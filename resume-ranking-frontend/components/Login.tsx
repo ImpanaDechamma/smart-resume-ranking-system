@@ -20,12 +20,12 @@ export default function Login({ onBack, defaultMode = "login" }: LoginProps) {
   const [error, setError] = useState("");
   const { login, register } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if (isLogin) {
-      const success = login(email, password);
+      const success = await login(email, password);
       if (!success) {
         setError("Invalid email or password");
       }
@@ -34,7 +34,7 @@ export default function Login({ onBack, defaultMode = "login" }: LoginProps) {
         setError("Please enter your name");
         return;
       }
-      const success = register(email, password, name, role);
+      const success = await register(email, password, name, role);
       if (!success) {
         setError("Email already exists");
       }

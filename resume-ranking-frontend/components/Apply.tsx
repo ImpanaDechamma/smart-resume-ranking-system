@@ -52,18 +52,20 @@ export default function Apply({ job, setPage }: ApplyProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !user) return;
     
     setIsSubmitting(true);
     
-    // Simulate slight network delay for better UX
-    setTimeout(() => {
-      applyToJob(job.id, user.name, user.email, file.name);
+    try {
+      await applyToJob(job.id, user.name, user.email, file);
       setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   if (submitted) {

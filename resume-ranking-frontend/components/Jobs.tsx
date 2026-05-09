@@ -194,9 +194,9 @@ function AddJobModal({
   const [description, setDescription] = useState("");
   const [skills, setSkills] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd({
+    await onAdd({
       title,
       company,
       description,
@@ -213,10 +213,10 @@ function AddJobModal({
         onClick={onClose}
       />
       
-      <div className="relative w-full max-w-4xl overflow-hidden rounded-[2rem] border border-white/10 dark:border-white/5 bg-card/90 backdrop-blur-2xl shadow-2xl shadow-black/20 flex flex-col md:flex-row">
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[2rem] border border-white/10 dark:border-white/5 bg-card/90 backdrop-blur-2xl shadow-2xl shadow-black/20 flex flex-col md:flex-row">
         
         {/* Left Side Branding */}
-        <div className="md:w-2/5 bg-gradient-to-br from-primary to-blue-600 p-8 text-white hidden md:flex flex-col justify-between relative overflow-hidden">
+        <div className="md:w-2/5 bg-gradient-to-br from-primary to-blue-600 p-8 text-white hidden md:flex flex-col justify-between relative overflow-hidden shrink-0">
           <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] opacity-10 mix-blend-overlay object-cover" />
           <div className="relative z-10">
             <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-6">
@@ -228,7 +228,7 @@ function AddJobModal({
         </div>
 
         {/* Form Content */}
-        <div className="flex-1 p-8 sm:p-10">
+        <div className="flex-1 p-8 sm:p-10 overflow-y-auto">
           <div className="flex items-center justify-between mb-8 md:hidden">
             <h3 className="text-2xl font-extrabold text-foreground">Post New Job</h3>
           </div>

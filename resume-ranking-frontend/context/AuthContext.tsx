@@ -11,53 +11,83 @@ interface User {
 interface AuthContextType {
   user: User | null;
   justRegistered: boolean;
-  login: (email: string, password: string) => boolean;
-  register: (email: string, password: string, name: string, role: "hr" | "candidate") => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string, role: "hr" | "candidate") => Promise<boolean>;
   logout: () => void;
   completeOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const demoAccounts = [
-  { email: "hr@company.com", password: "hr123", name: "Sarah Johnson", role: "hr" as const },
-  { email: "candidate@email.com", password: "cand123", name: "John Smith", role: "candidate" as const },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [justRegistered, setJustRegistered] = useState(false);
 
-  const login = (email: string, password: string): boolean => {
-    const account = demoAccounts.find(
-      (acc) => acc.email === email && acc.password === password
-    );
-    if (account) {
-      setUser({ email: account.email, role: account.role, name: account.name });
-      setJustRegistered(false);
-      return true;
+  // Initialize from localStorage on mount (optional enhancement, skipping for brevity but basic version provided)
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-    return false;
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const userData: User = { email: data.email, role: data.role, name: data.name };
+        setUser(userData);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(userData));
+        setJustRegistered(false);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
   };
 
-  const register = (
+  const register = async (
     email: string,
     password: string,
     name: string,
     role: "hr" | "candidate"
-  ): boolean => {
-    if (demoAccounts.find((acc) => acc.email === email)) {
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name, role }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const userData: User = { email: data.email, role: data.role, name: data.name };
+        setUser(userData);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(userData));
+        setJustRegistered(role === "candidate");
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error(err);
       return false;
     }
-    demoAccounts.push({ email, password, name, role });
-    setUser({ email, role, name });
-    setJustRegistered(role === "candidate");
-    return true;
   };
 
   const logout = () => {
     setUser(null);
     setJustRegistered(false);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   };
 
   const completeOnboarding = () => {
