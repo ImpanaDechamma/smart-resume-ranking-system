@@ -1,0 +1,8 @@
+flask
+flask-cors
+pymongo
+pdfminer.six
+python-docx
+python-dotenv
+pyjwt
+bcrypt

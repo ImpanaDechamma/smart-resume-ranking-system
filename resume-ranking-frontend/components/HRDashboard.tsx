@@ -2,15 +2,33 @@
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
-import { Briefcase, Users, Clock, CheckCircle, TrendingUp, Sparkles, Activity, FileText } from "lucide-react";
+import { Briefcase, Users, Clock, CheckCircle, TrendingUp, Sparkles, Activity, FileText, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface HRDashboardProps {
   setPage: (page: string) => void;
+  setAutoOpenAddModal: (open: boolean) => void;
 }
 
-export default function HRDashboard({ setPage }: HRDashboardProps) {
+export default function HRDashboard({ setPage, setAutoOpenAddModal }: HRDashboardProps) {
   const { jobs, applications } = useApp();
   const { user } = useAuth();
+  const [topSkills, setTopSkills] = useState<{skill: string; count: number}[]>([]);
+
+  useEffect(() => {
+    const fetchSkillStats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/skills/stats", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) setTopSkills(await res.json());
+      } catch (err) {
+        console.error("Error fetching skill stats:", err);
+      }
+    };
+    fetchSkillStats();
+  }, []);
 
   const stats = {
     totalJobs: jobs.length,
@@ -29,7 +47,11 @@ export default function HRDashboard({ setPage }: HRDashboardProps) {
   const maxStatusCount = Math.max(...Object.values(statusCounts), 1);
 
   const recentApplications = [...applications]
-    .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
+    .sort((a, b) => {
+      const timeA = new Date(a.appliedAt || a.appliedDate).getTime();
+      const timeB = new Date(b.appliedAt || b.appliedDate).getTime();
+      return timeB - timeA;
+    })
     .slice(0, 5);
 
   return (
@@ -44,20 +66,32 @@ export default function HRDashboard({ setPage }: HRDashboardProps) {
             <Sparkles className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-foreground">Welcome back, {user?.name?.split(' ')[0] || 'HR'}</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight text-foreground">Analytics Overview</h2>
             <p className="text-lg font-medium text-muted-foreground mt-1">
-              Here is what's happening with your recruitment pipeline today.
+              Tracking resume screening performance across all career benchmarks.
             </p>
+            <div className="mt-3 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-600 inline-block">
+              Simulation Dashboard
+            </div>
           </div>
         </div>
 
-        <button
-          onClick={() => setPage("rankings")}
-          className="relative z-10 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5"
-        >
-          <TrendingUp className="h-5 w-5" />
-          View Rankings
-        </button>
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setPage("jobs")}
+            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5"
+          >
+            <Briefcase className="h-5 w-5" />
+            Jobs
+          </button>
+          <button
+            onClick={() => setPage("rankings")}
+            className="flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 font-semibold text-foreground border border-border/50 shadow-lg hover:bg-background transition-all hover:-translate-y-0.5"
+          >
+            <TrendingUp className="h-5 w-5" />
+            View Rankings
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -101,7 +135,7 @@ export default function HRDashboard({ setPage }: HRDashboardProps) {
                 <Activity className="w-5 h-5" />
               </div>
               <h3 className="text-xl font-bold text-foreground">
-                Application Pipeline
+                Benchmark Screening Stats
               </h3>
             </div>
             
@@ -186,6 +220,32 @@ export default function HRDashboard({ setPage }: HRDashboardProps) {
               ))}
             </div>
           </div>
+
+          {/* Top Demanded Skills — from skill_tags collection */}
+          {topSkills.length > 0 && (
+            <div className="rounded-3xl border border-border/50 bg-card/60 backdrop-blur-xl p-6 shadow-xl shadow-black/5">
+              <h3 className="mb-6 text-lg font-bold text-foreground flex items-center gap-2">
+                <Zap className="w-5 h-5 text-violet-500" />
+                Top Demanded Skills
+              </h3>
+              <div className="space-y-3">
+                {topSkills.map(({ skill, count }, idx) => (
+                  <div key={skill} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-foreground/70">{skill}</span>
+                      <span className="text-xs font-black text-violet-600">{count} jobs</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-secondary/50 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-primary transition-all duration-700"
+                        style={{ width: `${(count / (topSkills[0]?.count || 1)) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>

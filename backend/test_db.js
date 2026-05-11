@@ -1,12 +1,14 @@
-const db = require('./config/db');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
 async function testConnection() {
   try {
-    const [rows] = await db.execute('SELECT 1 + 1 AS result');
-    console.log('Database connection SUCCESSFUL!', rows);
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Database connection SUCCESSFUL! MongoDB is ready.');
     process.exit(0);
   } catch (err) {
-    console.error('Database connection FAILED:', err.message);
+    console.error('Database connection FAILED!');
+    console.error('Error:', err.message);
     process.exit(1);
   }
 }

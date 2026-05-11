@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface User {
+  id: string;
   email: string;
   role: "hr" | "candidate";
   name: string;
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        const userData: User = { email: data.email, role: data.role, name: data.name };
+        const userData: User = { id: data.id || "", email: data.email, role: data.role, name: data.name };
         setUser(userData);
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(userData));
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (res.ok) {
         const data = await res.json();
-        const userData: User = { email: data.email, role: data.role, name: data.name };
+        const userData: User = { id: data.id || "", email: data.email, role: data.role, name: data.name };
         setUser(userData);
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(userData));

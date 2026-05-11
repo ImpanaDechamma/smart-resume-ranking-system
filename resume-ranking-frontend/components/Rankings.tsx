@@ -6,7 +6,9 @@ import { Trophy, Mail, FileText, Medal, Crown, Star } from "lucide-react";
 
 export default function Rankings({ initialJobId }: { initialJobId?: string }) {
   const { jobs, getApplicationsForJob, updateApplicationStatus } = useApp();
-  const [selectedJobId, setSelectedJobId] = useState(initialJobId || jobs[0]?.id || "");
+  // Rankings only applies to live jobs — benchmark simulations don't have real applicants
+  const liveJobs = jobs.filter(job => !job.is_benchmark);
+  const [selectedJobId, setSelectedJobId] = useState(initialJobId || liveJobs[0]?.id || "");
 
   useEffect(() => {
     if (initialJobId) setSelectedJobId(initialJobId);
@@ -17,6 +19,20 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
 
   const top3 = applications.slice(0, 3);
   const remaining = applications.slice(3);
+
+  if (liveJobs.length === 0) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center text-center bg-card/20 border border-border/50 rounded-3xl backdrop-blur-sm">
+        <div className="h-24 w-24 rounded-full bg-secondary flex items-center justify-center mb-6">
+          <Trophy className="h-10 w-10 text-muted-foreground/40" />
+        </div>
+        <p className="text-xl font-bold text-foreground">No live jobs yet</p>
+        <p className="mt-2 text-sm font-medium text-muted-foreground max-w-sm">
+          Rankings are only available for live job openings. Create a live job first to start receiving and ranking candidates.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -44,7 +60,7 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
               onChange={(e) => setSelectedJobId(e.target.value)}
               className="w-full appearance-none rounded-xl border border-border/50 bg-background/50 px-4 py-3.5 text-sm font-bold text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer"
             >
-              {jobs.map((job) => (
+          {liveJobs.map((job) => (
                 <option key={job.id} value={job.id} className="font-medium bg-background">
                   {job.title} - {job.company}
                 </option>
@@ -222,17 +238,56 @@ function PodiumCard({ app, rank, updateApplicationStatus }: { app: any, rank: nu
 }
 
 function StatusSelect({ app, updateApplicationStatus, fullWidth = false }: { app: any, updateApplicationStatus: any, fullWidth?: boolean }) {
+  const [saving, setSaving] = useState(false);
+  const [savedStatus, setSavedStatus] = useState(app.status);
+  const [flash, setFlash] = useState<'success' | 'error' | null>(null);
+
+  const handleChange = async (newStatus: string) => {
+    setSaving(true);
+    setFlash(null);
+    const prev = savedStatus;
+    setSavedStatus(newStatus); // optimistic update
+    try {
+      await updateApplicationStatus(app.id, newStatus);
+      setFlash('success');
+    } catch {
+      setSavedStatus(prev); // revert on error
+      setFlash('error');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setFlash(null), 2000);
+    }
+  };
+
   return (
-    <select
-      value={app.status}
-      onChange={(e) => updateApplicationStatus(app.id, e.target.value)}
-      className={`appearance-none rounded-xl border px-4 py-2.5 text-xs font-extrabold uppercase tracking-widest transition-all focus:outline-none focus:ring-4 cursor-pointer text-center ${fullWidth ? 'w-full' : 'w-40'} ${getStatusSelectStyles(app.status)}`}
-    >
-      <option value="pending" className="font-bold">Pending</option>
-      <option value="reviewed" className="font-bold">Reviewed</option>
-      <option value="shortlisted" className="font-bold">Shortlisted</option>
-      <option value="rejected" className="font-bold">Rejected</option>
-    </select>
+    <div className={`relative ${fullWidth ? 'w-full' : 'w-40'}`}>
+      <select
+        value={savedStatus}
+        onChange={(e) => handleChange(e.target.value)}
+        disabled={saving}
+        className={`appearance-none rounded-xl border px-4 py-2.5 text-xs font-extrabold uppercase tracking-widest transition-all focus:outline-none focus:ring-4 cursor-pointer text-center w-full ${saving ? 'opacity-50 cursor-wait' : ''} ${getStatusSelectStyles(savedStatus)}`}
+      >
+        <option value="pending" className="font-bold">Pending</option>
+        <option value="reviewed" className="font-bold">Reviewed</option>
+        <option value="shortlisted" className="font-bold">Shortlisted</option>
+        <option value="rejected" className="font-bold">Rejected</option>
+      </select>
+      {saving && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin opacity-50" />
+        </div>
+      )}
+      {flash === 'success' && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg whitespace-nowrap shadow-sm animate-in fade-in duration-200">
+          ✓ Saved · Candidate notified
+        </div>
+      )}
+      {flash === 'error' && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-lg whitespace-nowrap shadow-sm">
+          ✗ Failed to save
+        </div>
+      )}
+    </div>
   );
 }
 

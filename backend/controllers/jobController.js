@@ -1,22 +1,23 @@
-const db = require('../config/db');
+const Job = require('../models/Job');
+const Application = require('../models/Application');
 
 // @desc    Get all jobs
 // @route   GET /api/jobs
 // @access  Public
 const getJobs = async (req, res) => {
   try {
-    const [jobs] = await db.execute(`
-      SELECT j.*, 
-        (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as applicants 
-      FROM jobs j 
-      ORDER BY j.created_at DESC
-    `);
+    const jobs = await Job.find().sort({ created_at: -1 }).lean();
     
-    // Process skills into arrays
-    const formattedJobs = jobs.map(job => ({
-      ...job,
-      skills: job.required_skills ? job.required_skills.split(',').map(s => s.trim()) : [],
-      posted: job.created_at.toISOString().split('T')[0]
+    // Process skills into arrays and add applicant counts
+    const formattedJobs = await Promise.all(jobs.map(async (job) => {
+      const applicantCount = await Application.countDocuments({ job: job._id });
+      return {
+        ...job,
+        id: job._id.toString(),
+        skills: job.required_skills || [],
+        posted: job.created_at.toISOString().split('T')[0],
+        applicants: applicantCount
+      };
     }));
 
     res.json(formattedJobs);
@@ -31,22 +32,20 @@ const getJobs = async (req, res) => {
 // @access  Public
 const getJob = async (req, res) => {
   try {
-    const [jobs] = await db.execute(`
-      SELECT j.*, 
-        (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as applicants 
-      FROM jobs j 
-      WHERE j.id = ?
-    `, [req.params.id]);
+    const job = await Job.findById(req.params.id).lean();
 
-    if (jobs.length === 0) {
+    if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
 
-    const job = jobs[0];
+    const applicantCount = await Application.countDocuments({ job: job._id });
+
     res.json({
       ...job,
-      skills: job.required_skills ? job.required_skills.split(',').map(s => s.trim()) : [],
-      posted: job.created_at.toISOString().split('T')[0]
+      id: job._id.toString(),
+      skills: job.required_skills || [],
+      posted: job.created_at.toISOString().split('T')[0],
+      applicants: applicantCount
     });
   } catch (error) {
     console.error(error);
@@ -60,25 +59,31 @@ const getJob = async (req, res) => {
 const createJob = async (req, res) => {
   try {
     const { title, company, description, skills } = req.body;
-    
-    const requiredSkillsStr = Array.isArray(skills) ? skills.join(',') : skills;
+    let { logo, banner } = req.body;
 
-    const [result] = await db.execute(
-      'INSERT INTO jobs (recruiter_id, title, company, description, required_skills) VALUES (?, ?, ?, ?, ?)',
-      [req.user.id, title, company, description, requiredSkillsStr]
-    );
-
-    // Insert into job_skills table
-    if (Array.isArray(skills)) {
-      for (let skill of skills) {
-        await db.execute(
-          'INSERT INTO job_skills (job_id, skill_name) VALUES (?, ?)',
-          [result.insertId, skill.trim().toLowerCase()]
-        );
+    // Handle file uploads if present
+    if (req.files) {
+      if (req.files.logo && req.files.logo[0]) {
+        logo = `http://localhost:5000/uploads/images/${req.files.logo[0].filename}`;
+      }
+      if (req.files.banner && req.files.banner[0]) {
+        banner = `http://localhost:5000/uploads/images/${req.files.banner[0].filename}`;
       }
     }
+    
+    const required_skills = Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []);
 
-    res.status(201).json({ id: result.insertId, message: 'Job created successfully' });
+    const job = await Job.create({
+      recruiter: req.user.id,
+      title,
+      company,
+      description,
+      logo,
+      banner,
+      required_skills: required_skills.map(s => s.toLowerCase())
+    });
+
+    res.status(201).json({ id: job._id, message: 'Job created successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });

@@ -1,4 +1,5 @@
-const db = require('../config/db');
+const Job = require('../models/Job');
+const Application = require('../models/Application');
 const { extractText, extractSkills } = require('../services/resumeParser');
 
 // @desc    Apply to a job
@@ -10,12 +11,9 @@ const applyToJob = async (req, res) => {
     const candidateId = req.user.id;
 
     // Check if already applied
-    const [existing] = await db.execute(
-      'SELECT id FROM applications WHERE job_id = ? AND candidate_id = ?',
-      [jobId, candidateId]
-    );
+    const existing = await Application.findOne({ job: jobId, candidate: candidateId });
 
-    if (existing.length > 0) {
+    if (existing) {
       return res.status(400).json({ error: 'You have already applied to this job' });
     }
 
@@ -30,20 +28,16 @@ const applyToJob = async (req, res) => {
     const candidateSkills = extractSkills(extractedText);
 
     // Save application
-    const [result] = await db.execute(
-      'INSERT INTO applications (job_id, candidate_id, resume_path, extracted_text, status) VALUES (?, ?, ?, ?, ?)',
-      [jobId, candidateId, resumePath, extractedText, 'pending']
-    );
+    const application = await Application.create({
+      job: jobId,
+      candidate: candidateId,
+      resume_path: resumePath,
+      extracted_text: extractedText,
+      status: 'pending',
+      skills: candidateSkills
+    });
 
-    // Save extracted skills
-    for (let skill of candidateSkills) {
-      await db.execute(
-        'INSERT INTO extracted_skills (application_id, skill_name) VALUES (?, ?)',
-        [result.insertId, skill]
-      );
-    }
-
-    res.status(201).json({ message: 'Application submitted successfully', applicationId: result.insertId });
+    res.status(201).json({ message: 'Application submitted successfully', applicationId: application._id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error during application' });
@@ -55,23 +49,19 @@ const applyToJob = async (req, res) => {
 // @access  Private (Candidate)
 const getMyApplications = async (req, res) => {
   try {
-    const [applications] = await db.execute(`
-      SELECT a.*, j.title as jobTitle, j.company, 
-             r.total_score as score
-      FROM applications a
-      JOIN jobs j ON a.job_id = j.id
-      LEFT JOIN rankings r ON r.application_id = a.id
-      WHERE a.candidate_id = ?
-    `, [req.user.id]);
+    const applications = await Application.find({ candidate: req.user.id })
+      .populate('job', 'title company')
+      .sort({ applied_at: -1 })
+      .lean();
 
     const formatted = applications.map(app => ({
-      id: app.id,
-      jobId: app.job_id.toString(),
-      jobTitle: app.jobTitle,
-      company: app.company,
+      id: app._id,
+      jobId: app.job?._id.toString(),
+      jobTitle: app.job?.title,
+      company: app.job?.company,
       appliedDate: app.applied_at.toISOString().split('T')[0],
       status: app.status,
-      score: app.score || 0
+      score: app.ranking?.total_score || 0
     }));
 
     res.json(formatted);
@@ -88,32 +78,20 @@ const getJobApplications = async (req, res) => {
   try {
     const { jobId } = req.params;
 
-    // Verify ownership (optional based on your needs, skipping for now)
-
-    const [applications] = await db.execute(`
-      SELECT a.*, u.name as candidateName, u.email as candidateEmail,
-             r.total_score as score
-      FROM applications a
-      JOIN users u ON a.candidate_id = u.id
-      LEFT JOIN rankings r ON r.application_id = a.id
-      WHERE a.job_id = ?
-    `, [jobId]);
-
-    // Fetch skills for each application
-    for (let app of applications) {
-      const [skills] = await db.execute('SELECT skill_name FROM extracted_skills WHERE application_id = ?', [app.id]);
-      app.candidateSkills = skills.map(s => s.skill_name);
-    }
+    const applications = await Application.find({ job: jobId })
+      .populate('candidate', 'name email')
+      .sort({ applied_at: -1 })
+      .lean();
 
     const formatted = applications.map(app => ({
-      id: app.id.toString(),
-      jobId: app.job_id.toString(),
-      candidateName: app.candidateName,
-      candidateEmail: app.candidateEmail,
+      id: app._id.toString(),
+      jobId: app.job.toString(),
+      candidateName: app.candidate?.name,
+      candidateEmail: app.candidate?.email,
       appliedDate: app.applied_at.toISOString().split('T')[0],
       status: app.status,
-      score: app.score || 0,
-      candidateSkills: app.candidateSkills,
+      score: app.ranking?.total_score || 0,
+      candidateSkills: app.skills || [],
       missingSkills: [] // In a real app, calculate this by comparing with job_skills
     }));
 
@@ -130,8 +108,13 @@ const getJobApplications = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    await db.execute('UPDATE applications SET status = ? WHERE id = ?', [status, req.params.id]);
-    res.json({ message: 'Status updated' });
+    const application = await Application.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    res.json({ message: 'Status updated', application });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

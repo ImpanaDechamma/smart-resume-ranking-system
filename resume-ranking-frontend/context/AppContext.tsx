@@ -11,6 +11,10 @@ export interface Job {
   skills: string[];
   posted: string;
   applicants: number;
+  logo?: string;
+  banner?: string;
+  is_benchmark?: boolean;
+  created_by?: string;  // HR user ID who posted this job
 }
 
 export interface Application {
@@ -19,6 +23,7 @@ export interface Application {
   jobTitle: string;
   company: string;
   appliedDate: string;
+  appliedAt?: string;
   status: "pending" | "reviewed" | "shortlisted" | "rejected";
   score: number;
   candidateName: string;
@@ -31,13 +36,16 @@ export interface Application {
 interface AppContextType {
   jobs: Job[];
   applications: Application[];
-  addJob: (job: Omit<Job, "id" | "applicants" | "posted">) => Promise<void>;
+  addJob: (job: Omit<Job, "id" | "applicants" | "posted"> & { logoFile?: File, bannerFile?: File }) => Promise<void>;
+  editJob: (jobId: string, updates: { title: string; description: string; skills: string[] }) => Promise<void>;
+  deleteJob: (jobId: string) => Promise<void>;
   applyToJob: (jobId: string, candidateName: string, candidateEmail: string, resumeFile: File | string) => Promise<void>;
   updateApplicationStatus: (appId: string, status: Application["status"]) => Promise<void>;
   getApplicationsForJob: (jobId: string) => Application[];
   getApplicationsForCandidate: (email: string) => Application[];
   notifications: any[];
-  clearNotifications: () => void;
+  clearNotifications: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -48,6 +56,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const { user } = useAuth();
 
+  // ── Fetch real notifications from DB ──────────────────────────────────
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/notifications/my", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    }
+  };
+
+
   // Fetch Jobs on mount
   useEffect(() => {
     const fetchJobs = async () => {
@@ -57,7 +83,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const data = await res.json();
           setJobs(data.map((j: any) => ({
             ...j,
-            id: j.id.toString(),
+            id: j.id?.toString() || j._id?.toString() || "",
+            skills: Array.isArray(j.skills) ? j.skills : (j.mandatory_skills || []),
+            created_by: j.created_by || "",
           })));
         }
       } catch (err) {
@@ -66,6 +94,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     fetchJobs();
   }, []);
+
+  // Fetch notifications when user logs in
+  useEffect(() => {
+    if (user) fetchNotifications();
+    else setNotifications([]);
+  }, [user]);
 
   // Fetch Applications if user is logged in
   useEffect(() => {
@@ -97,17 +131,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Remove duplicates if any
           const uniqueApps = Array.from(new Map(allApps.map((a) => [a.id, a])).values());
           setApplications(uniqueApps);
-          
-          // Generate HR Notifications
-          const pendingCount = uniqueApps.filter(a => a.status === 'pending').length;
-          if (pendingCount > 0) {
-            setNotifications([{
-              id: 'hr-notif',
-              title: 'New Applications',
-              message: `You have ${pendingCount} new candidates waiting for review.`,
-              type: 'info'
-            }]);
-          }
         }
       } catch (err) {
         console.error("Error fetching applications:", err);
@@ -119,35 +142,111 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user, jobs]);
 
-  const addJob = async (job: Omit<Job, "id" | "applicants" | "posted">) => {
+  const addJob = async (job: Omit<Job, "id" | "applicants" | "posted"> & { logoFile?: File, bannerFile?: File, is_benchmark?: boolean }) => {
     try {
       const token = localStorage.getItem("token");
+      
+      const formData = new FormData();
+      formData.append("title", job.title);
+      formData.append("company", job.company);
+      formData.append("description", job.description);
+      formData.append("skills", job.skills.join(","));
+      formData.append("is_benchmark", job.is_benchmark ? "true" : "false");
+      
+      if (job.logoFile) {
+        formData.append("logo", job.logoFile);
+      } else if (job.logo) {
+        formData.append("logo", job.logo);
+      }
+
+      if (job.bannerFile) {
+        formData.append("banner", job.bannerFile);
+      } else if (job.banner) {
+        formData.append("banner", job.banner);
+      }
+
       const res = await fetch("http://localhost:5000/api/jobs", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        // Refresh jobs list from server so the new job appears immediately
+        const r = await fetch("http://localhost:5000/api/jobs");
+        if (r.ok) {
+          const d = await r.json();
+          setJobs(d.map((j: any) => ({ 
+            ...j, 
+            id: j.id?.toString() || j._id?.toString() || "",
+            skills: Array.isArray(j.skills) ? j.skills : (j.mandatory_skills || []),
+          })));
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error("Failed to create job:", errData.error || res.status);
+        alert(`Failed to create job: ${errData.error || "Server error"}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error — could not connect to backend.");
+    }
+  };
+
+  const editJob = async (jobId: string, updates: { title: string; description: string; skills: string[] }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: job.title,
-          company: job.company,
-          description: job.description,
-          skills: job.skills,
+          title: updates.title,
+          description: updates.description,
+          skills: updates.skills.join(","),
         }),
       });
-
       if (res.ok) {
-        const data = await res.json();
-        const newJob: Job = {
-          ...job,
-          id: data.id.toString(),
-          applicants: 0,
-          posted: new Date().toISOString().split("T")[0],
-        };
-        setJobs((prev) => [newJob, ...prev]);
+        const r = await fetch("http://localhost:5000/api/jobs");
+        if (r.ok) {
+          const d = await r.json();
+          setJobs(d.map((j: any) => ({
+            ...j,
+            id: j.id?.toString() || j._id?.toString() || "",
+            skills: Array.isArray(j.skills) ? j.skills : (j.mandatory_skills || []),
+            created_by: j.created_by || "",
+          })));
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to update job: ${err.error || "Server error"}`);
       }
     } catch (err) {
       console.error(err);
+      alert("Network error — could not connect to backend.");
+    }
+  };
+
+  const deleteJob = async (jobId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setJobs((prev) => prev.filter((j) => j.id !== jobId));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to delete job: ${err.error || "Server error"}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error — could not connect to backend.");
     }
   };
 
@@ -175,13 +274,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         
         const newApp: Application = {
-          id: data.applicationId.toString(),
+          id: (data.applicationId || data.id || "").toString(),
           jobId,
           jobTitle: jobs.find(j => j.id === jobId)?.title || "",
           company: jobs.find(j => j.id === jobId)?.company || "",
           appliedDate: new Date().toISOString().split("T")[0],
-          status: "pending",
-          score: 0,
+          appliedAt: new Date().toISOString(),
+          status: data.status || "pending",
+          score: data.score || 0,
           candidateName,
           candidateEmail,
         };
@@ -189,14 +289,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setApplications((prev) => [...prev, newApp]);
         setJobs((prev) =>
           prev.map((j) =>
-            j.id === jobId ? { ...j, applicants: j.applicants + 1 } : j
+            j.id === jobId ? { ...j, applicants: (j.applicants || 0) + 1 } : j
           )
         );
+        fetchNotifications();
+        return data;
       } else {
-        console.error(await res.json());
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to screen resume");
       }
     } catch (err) {
       console.error(err);
+      throw err;
     }
   };
 
@@ -216,6 +320,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setApplications((prev) =>
           prev.map((app) => (app.id === appId ? { ...app, status } : app))
         );
+        fetchNotifications();
       }
     } catch (err) {
       console.error(err);
@@ -230,18 +335,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return applications.filter((app) => app.candidateEmail === email);
   };
 
+  const clearNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch("http://localhost:5000/api/notifications/clear", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications([]);
+    } catch (err) {
+      console.error("Error clearing notifications:", err);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
         jobs,
         applications,
         addJob,
+        editJob,
+        deleteJob,
         applyToJob,
         updateApplicationStatus,
         getApplicationsForJob,
         getApplicationsForCandidate,
         notifications,
-        clearNotifications: () => setNotifications([]),
+        clearNotifications,
+        refreshNotifications: fetchNotifications,
       }}
     >
       {children}

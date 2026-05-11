@@ -1,0 +1,17 @@
+{
+  "name": "smart-resume-ranking-system",
+  "version": "1.0.0",
+  "description": "Smart Resume Ranking System with AI Benchmarks",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:python\"",
+    "dev:frontend": "cd resume-ranking-frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:python": "cd python-backend && python app.py",
+    "seed:python": "cd python-backend && python seed_benchmarks.py",
+    "seed:users": "cd python-backend && python seed_users.py",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix resume-ranking-frontend && cd python-backend && pip install -r requirements.txt"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

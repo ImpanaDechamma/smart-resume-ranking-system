@@ -21,17 +21,26 @@ export default function Navbar({ page, setPage }: NavbarProps) {
       <header className="pointer-events-auto bg-background/60 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-full shadow-2xl shadow-black/10 flex items-center justify-between px-6 py-3 transition-all duration-500 hover:bg-background/80 hover:shadow-primary/20">
         
         {/* Logo */}
-        <button
-          onClick={() => setPage(isHR ? "dashboard" : "jobs")}
-          className="flex items-center gap-2 group transition-transform hover:scale-105"
-        >
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-blue-500 shadow-md">
-            <FileText className="h-4 w-4 text-white" />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setPage(isHR ? "dashboard" : "jobs")}
+            className="flex items-center gap-2 group transition-transform hover:scale-105"
+          >
+            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary shadow-sm">
+              <FileText className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-foreground group-hover:text-primary transition-colors hidden sm:block">
+              CareerAI
+            </span>
+          </button>
+          
+          <div className="hidden md:flex px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">
+              Simulation
+            </span>
           </div>
-          <span className="text-lg font-bold tracking-tight text-foreground group-hover:text-primary transition-colors hidden sm:block">
-            ResumeRank
-          </span>
-        </button>
+        </div>
 
         {/* Navigation Links */}
         <nav className="flex items-center gap-1 bg-secondary/30 rounded-full p-1 border border-border/50">
@@ -47,7 +56,7 @@ export default function Navbar({ page, setPage }: NavbarProps) {
                 active={page === "jobs"}
                 onClick={() => setPage("jobs")}
                 icon={<Briefcase className="h-4 w-4" />}
-                label="Jobs"
+                label="Benchmarks"
               />
               <NavButton
                 active={page === "rankings"}
@@ -63,7 +72,7 @@ export default function Navbar({ page, setPage }: NavbarProps) {
                 active={page === "jobs"}
                 onClick={() => setPage("jobs")}
                 icon={<Briefcase className="h-4 w-4" />}
-                label="Browse Jobs"
+                label="Benchmarks"
               />
               <NavButton
                 active={page === "my-applications"}

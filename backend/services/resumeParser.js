@@ -37,8 +37,9 @@ const extractSkills = (text) => {
   const extractedSkills = [];
   
   commonSkills.forEach(skill => {
-    // Look for exact word matches (handling punctuation boundaries)
-    const regex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    // Escape special characters and check for boundaries that handle symbols like C++ and Node.js
+    const escapedSkill = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(?:^|[^a-zA-Z0-9])${escapedSkill}(?![a-zA-Z0-9])`, 'i');
     if (regex.test(textLower)) {
       extractedSkills.push(skill);
     }

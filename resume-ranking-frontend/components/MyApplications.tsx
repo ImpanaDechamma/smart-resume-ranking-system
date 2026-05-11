@@ -63,9 +63,15 @@ export default function MyApplications({ setPage }: MyApplicationsProps) {
 
       {/* Applications List */}
       <div className="space-y-6">
-        {applications.map((app) => (
-          <ApplicationTrackerCard key={app.id} app={app} />
-        ))}
+        {[...applications]
+          .sort((a, b) => {
+            const timeA = new Date(a.appliedAt || a.appliedDate).getTime();
+            const timeB = new Date(b.appliedAt || b.appliedDate).getTime();
+            return timeB - timeA;
+          })
+          .map((app) => (
+            <ApplicationTrackerCard key={app.id} app={app} />
+          ))}
       </div>
     </div>
   );
