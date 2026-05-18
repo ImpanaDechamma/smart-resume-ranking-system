@@ -103,7 +103,7 @@ def parse_resume(text):
             break
 
     # ── Experience Extraction ───────────────────────────────────────────────
-    # Patterns: "5 years of experience", "3+ years", "2 yrs experience"
+    # Patterns: "5 years of experience", "3+ years", "2 yrs experience", "12 months"
     experience = 0
     exp_patterns = [
         r'(\d+)\s*\+?\s*years?\s+of\s+experience',
@@ -116,6 +116,13 @@ def parse_resume(text):
         if m:
             experience = int(m.group(1))
             break
+            
+    # Check for month-based experience (e.g., "12 months")
+    if experience == 0:
+        m_months = re.search(r'(\d+)\s*months?', text_lower)
+        if m_months:
+            months_val = int(m_months.group(1))
+            experience = max(1, int(round(months_val / 12.0)))
     
     # Fallback: count how many distinct "work experience" sections exist
     if experience == 0:

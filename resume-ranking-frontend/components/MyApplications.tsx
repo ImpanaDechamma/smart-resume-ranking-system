@@ -2,7 +2,7 @@
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
-import { Building2, Calendar, FileText, ArrowRight, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Building2, Calendar, FileText, ArrowRight, CheckCircle2, Clock, XCircle, Briefcase } from "lucide-react";
 
 interface MyApplicationsProps {
   setPage: (page: string) => void;
@@ -36,27 +36,36 @@ export default function MyApplications({ setPage }: MyApplicationsProps) {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-5xl mx-auto">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-6xl mx-auto">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 bg-card/40 backdrop-blur-xl border border-border/50 p-8 rounded-3xl shadow-xl shadow-black/5">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground">My Applications</h2>
-          <p className="text-sm font-medium text-muted-foreground mt-2">
-            Track the status of your active job applications in real-time.
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex flex-col">
-            <span className="text-3xl font-black text-foreground">{applications.length}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total</span>
+      {/* Visual Header */}
+      <div className="relative overflow-hidden rounded-[3rem] border border-border/50 bg-card/40 backdrop-blur-xl p-10 md:p-14 shadow-2xl shadow-black/5">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-orange-500/10 to-transparent rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-10">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-[10px] font-black uppercase tracking-[0.2em] text-orange-600 mb-6">
+               <Briefcase className="w-3 h-3" />
+               Application Tracker
+            </div>
+            <h2 className="text-5xl font-black tracking-tighter text-foreground mb-4">Track Your <span className="text-primary">Journey.</span></h2>
+            <p className="text-lg font-medium text-muted-foreground max-w-md leading-relaxed">
+              Monitor your screening status across all simulations and live job applications in real-time.
+            </p>
           </div>
-          <div className="w-px h-12 bg-border/50" />
-          <div className="flex flex-col">
-            <span className="text-3xl font-black text-emerald-500">
-              {applications.filter(a => a.status === 'shortlisted').length}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Shortlisted</span>
+
+          <div className="flex items-center gap-8 bg-background/50 backdrop-blur-md p-8 rounded-[2.5rem] border border-border/50">
+            <div className="text-center">
+              <span className="block text-4xl font-black text-foreground">{applications.length}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">Applied</span>
+            </div>
+            <div className="w-px h-12 bg-border/50" />
+            <div className="text-center">
+              <span className="block text-4xl font-black text-emerald-500">
+                {applications.filter(a => a.status === 'shortlisted').length}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">Selected</span>
+            </div>
           </div>
         </div>
       </div>
@@ -79,8 +88,9 @@ export default function MyApplications({ setPage }: MyApplicationsProps) {
 
 function ApplicationTrackerCard({ app }: { app: any }) {
   const steps = ["pending", "reviewed", "shortlisted"];
-  const isRejected = app.status === "rejected";
-  const currentStepIndex = isRejected ? -1 : steps.indexOf(app.status);
+  const status = app.status?.toLowerCase() || "pending";
+  const isRejected = status === "rejected";
+  const currentStepIndex = isRejected ? -1 : steps.indexOf(status);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl p-8 transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 group">
@@ -168,6 +178,26 @@ function ApplicationTrackerCard({ app }: { app: any }) {
         </div>
 
       </div>
+      
+      {app.interviewDate && (
+        <div className="relative z-10 mt-6 p-6 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-between group/interview animate-in slide-in-from-bottom-2 duration-500">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                <Calendar className="w-6 h-6" />
+             </div>
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Upcoming Interview</p>
+                <h4 className="text-xl font-black text-foreground">
+                  {new Date(app.interviewDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </h4>
+             </div>
+          </div>
+          <div className="hidden md:flex flex-col items-end">
+             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Location</p>
+             <p className="text-sm font-bold text-foreground">Virtual Meeting Link in Notifications</p>
+          </div>
+        </div>
+      )}
 
       {/* Missing Skills Section */}
       {app.missingSkills && app.missingSkills.length > 0 && (

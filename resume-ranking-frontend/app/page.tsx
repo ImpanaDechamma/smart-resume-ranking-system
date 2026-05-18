@@ -13,7 +13,10 @@ import Apply from "@/components/Apply";
 import MyApplications from "@/components/MyApplications";
 import Rankings from "@/components/Rankings";
 import Interests from "@/components/Interests";
-import { AddJobModal } from "@/components/Jobs";
+import Sidebar from "@/components/Sidebar";
+import Profile from "@/components/Profile";
+import CandidateDashboard from "@/components/CandidateDashboard";
+import AddJobModal from "@/components/AddJobModal";
 
 function AppContent() {
   const { user, justRegistered } = useAuth();
@@ -48,17 +51,24 @@ function AppContent() {
   if (justRegistered && !isHR) return <Interests />;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar page={page} setPage={setPage} />
-      <main className="mx-auto max-w-7xl px-4 pt-32 pb-12 sm:px-6 lg:px-8 relative z-10">
-        {isHR && page === "dashboard" && <HRDashboard setPage={setPage} setAutoOpenAddModal={setAutoOpenAddModal} />}
-        {page === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} setRankingJobId={setRankingJobId} setAutoOpenAddModal={setAutoOpenAddModal} />}
-        {!isHR && page === "apply" && <Apply job={applyJob} setPage={setPage} />}
-        {!isHR && page === "my-applications" && <MyApplications setPage={setPage} />}
-        {isHR && page === "rankings" && <Rankings initialJobId={rankingJobId} />}
-      </main>
+    <div className="min-h-screen bg-[#FDFDFF]">
+      <Sidebar page={page} setPage={setPage} />
+      
+      <div className="pl-28 pr-8 pb-12 transition-all duration-500">
+        <Navbar page={page} setPage={setPage} />
+        
+        <main className="pt-28 relative z-10 mx-auto max-w-[1600px]">
+          {page === "profile" && <Profile onBack={() => setPage(isHR ? "dashboard" : "dashboard")} />}
+          {isHR && page === "dashboard" && <HRDashboard setPage={setPage} setAutoOpenAddModal={setAutoOpenAddModal} />}
+          {!isHR && page === "dashboard" && <CandidateDashboard setPage={setPage} />}
+          {page === "jobs" && <Jobs setPage={setPage} setApplyJob={setApplyJob} setRankingJobId={setRankingJobId} setAutoOpenAddModal={setAutoOpenAddModal} />}
+          {!isHR && page === "apply" && <Apply job={applyJob} setPage={setPage} />}
+          {!isHR && page === "my-applications" && <MyApplications setPage={setPage} />}
+          {isHR && page === "rankings" && <Rankings initialJobId={rankingJobId} />}
+        </main>
 
-      {/* Global Add Job Modal - Renders outside the main content to avoid z-index/navbar issues */}
+      </div>
+
       {autoOpenAddModal && isHR && (
         <AddJobModal 
           onClose={() => setAutoOpenAddModal(false)} 
@@ -68,6 +78,7 @@ function AppContent() {
     </div>
   );
 }
+
 
 export default function Page() {
   return (

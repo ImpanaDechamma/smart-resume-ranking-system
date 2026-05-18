@@ -229,22 +229,6 @@ export default function Login({ onBack, defaultMode = "login" }: LoginProps) {
             </Button>
           </form>
 
-          {/* Demo accounts hint */}
-          <div className="mt-8 rounded-xl bg-secondary/70 border border-border p-5">
-            <p className="mb-3 text-sm font-semibold text-foreground">
-              Demo Accounts
-            </p>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                <span className="font-medium text-foreground">HR Manager:</span>{" "}
-                hr@company.com / hr123
-              </p>
-              <p>
-                <span className="font-medium text-foreground">Candidate:</span>{" "}
-                candidate@email.com / cand123
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

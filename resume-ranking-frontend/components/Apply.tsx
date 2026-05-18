@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useApp, Job } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
-import { UploadCloud, CheckCircle2, Building2, ArrowLeft, FileText, Briefcase, Calendar, Check, ArrowRight, Sparkles } from "lucide-react";
+import { UploadCloud, CheckCircle2, Building2, ArrowLeft, FileText, Briefcase, Calendar, Check, ArrowRight, Sparkles, Users } from "lucide-react";
 
 interface ApplyProps {
   job: Job | null;
@@ -115,10 +115,9 @@ export default function Apply({ job, setPage }: ApplyProps) {
                  </div>
 
                  <div className="space-y-6">
-                    <ScoreBar label="Skills Match" value={result.score > 50 ? 50 : result.score} max={50} />
-                    <ScoreBar label="Education & CGPA" value={20} max={20} />
-                    <ScoreBar label="Certifications" value={15} max={20} />
-                    <ScoreBar label="Experience Level" value={10} max={10} />
+                    <ScoreBar label="Skills Match" value={result.details?.breakdown?.skills || (result.score > 70 ? 70 : result.score)} max={70} />
+                    <ScoreBar label="Education & CGPA" value={result.details?.breakdown?.education || 15} max={15} />
+                    <ScoreBar label="Experience Level" value={result.details?.breakdown?.experience || 15} max={15} />
                  </div>
                </div>
             </div>
@@ -129,7 +128,7 @@ export default function Apply({ job, setPage }: ApplyProps) {
                   <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Strengths Identified
                 </h3>
                 <ul className="space-y-4">
-                   {job.skills.filter(s => !result.missing_skills?.includes(s)).map((skill: string) => (
+                   {job.skills.filter(s => !(result.details?.missing_skills || []).includes(s)).map((skill: string) => (
                      <li key={skill} className="flex items-center gap-3 text-sm font-semibold text-foreground/80">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         {skill}
@@ -143,11 +142,11 @@ export default function Apply({ job, setPage }: ApplyProps) {
                   <Sparkles className="w-5 h-5" /> Missing Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                   {result.missing_skills?.map((skill: string) => (
+                   {result.details?.missing_skills?.length > 0 ? result.details.missing_skills.map((skill: string) => (
                      <span key={skill} className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-600 text-xs font-bold border border-amber-500/20">
                         {skill}
                      </span>
-                   )) || <p className="text-xs text-muted-foreground font-medium italic">All mandatory skills found!</p>}
+                   )) : <p className="text-xs text-muted-foreground font-medium italic">All mandatory skills found!</p>}
                 </div>
               </div>
             </div>
@@ -161,7 +160,7 @@ export default function Apply({ job, setPage }: ApplyProps) {
                 <h3 className="text-2xl font-black mb-4 leading-tight">AI Skill Recommendations</h3>
                 <p className="text-primary-foreground/80 text-sm font-medium mb-8">Based on your target of {job.company}, we recommend mastering:</p>
                 <div className="space-y-3">
-                   {result.missing_skills?.slice(0, 3).map((skill: string) => (
+                   {result.details?.missing_skills?.slice(0, 3).map((skill: string) => (
                      <div key={skill} className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10">
                         <p className="text-xs font-black uppercase tracking-widest mb-1 opacity-60">Learning Path</p>
                         <p className="font-bold">{skill} Fundamentals</p>
@@ -224,6 +223,15 @@ export default function Apply({ job, setPage }: ApplyProps) {
             <p className="text-lg font-semibold text-muted-foreground mb-8">
               {job.company} Benchmark
             </p>
+
+            {!job.is_benchmark && job.remaining_vacancies !== undefined && (
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border mb-6 ${
+                job.remaining_vacancies <= 3 ? 'bg-red-500/10 border-red-500/20 text-red-500 animate-pulse' : 'bg-primary/10 border-primary/20 text-primary'
+              }`}>
+                <Users className="w-4 h-4" />
+                {job.remaining_vacancies} {job.remaining_vacancies === 1 ? 'seat' : 'seats'} left
+              </div>
+            )}
 
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-3 text-sm font-bold text-foreground">
@@ -323,9 +331,9 @@ export default function Apply({ job, setPage }: ApplyProps) {
 
               <button
                 type="submit"
-                disabled={!file || isSubmitting}
+                disabled={!file || isSubmitting || (!job.is_benchmark && job.remaining_vacancies !== undefined && job.remaining_vacancies <= 0)}
                 className={`mt-8 w-full rounded-2xl py-5 text-lg font-bold shadow-xl transition-all duration-300 flex items-center justify-center gap-3 ${
-                  file && !isSubmitting
+                  file && !isSubmitting && (job.is_benchmark || (job.remaining_vacancies !== undefined && job.remaining_vacancies > 0))
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-primary/30 hover:-translate-y-1"
                     : "cursor-not-allowed bg-secondary/80 border border-border/50 text-muted-foreground shadow-none"
                 }`}
@@ -335,6 +343,8 @@ export default function Apply({ job, setPage }: ApplyProps) {
                     <div className="h-5 w-5 rounded-full border-2 border-primary-foreground border-r-transparent animate-spin" />
                     {job.is_benchmark ? "Analyzing Profile..." : "Submitting Application..."}
                   </>
+                ) : (!job.is_benchmark && job.remaining_vacancies !== undefined && job.remaining_vacancies <= 0) ? (
+                  "Job is Full"
                 ) : file ? (
                   <>
                     {job.is_benchmark ? "Run AI Screening" : "Submit Application"}

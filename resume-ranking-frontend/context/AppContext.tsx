@@ -14,6 +14,8 @@ export interface Job {
   logo?: string;
   banner?: string;
   is_benchmark?: boolean;
+  vacancies?: number;
+  remaining_vacancies?: number;
   created_by?: string;  // HR user ID who posted this job
 }
 
@@ -31,13 +33,14 @@ export interface Application {
   resumeFile?: string;
   candidateSkills?: string[];
   missingSkills?: string[];
+  interviewDate?: string;
 }
 
 interface AppContextType {
   jobs: Job[];
   applications: Application[];
   addJob: (job: Omit<Job, "id" | "applicants" | "posted"> & { logoFile?: File, bannerFile?: File }) => Promise<void>;
-  editJob: (jobId: string, updates: { title: string; description: string; skills: string[] }) => Promise<void>;
+  editJob: (jobId: string, updates: { title: string; description: string; logo?: string; banner?: string; logoFile?: File; bannerFile?: File; skills: string[] }) => Promise<void>;
   deleteJob: (jobId: string) => Promise<void>;
   applyToJob: (jobId: string, candidateName: string, candidateEmail: string, resumeFile: File | string) => Promise<void>;
   updateApplicationStatus: (appId: string, status: Application["status"]) => Promise<void>;
@@ -45,7 +48,10 @@ interface AppContextType {
   getApplicationsForCandidate: (email: string) => Application[];
   notifications: any[];
   clearNotifications: () => Promise<void>;
+  markNotificationAsRead: (id: string) => Promise<void>;
   refreshNotifications: () => Promise<void>;
+  interests: string[];
+  toggleInterest: (jobId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -54,6 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
   const { user } = useAuth();
 
   // ── Fetch real notifications from DB ──────────────────────────────────
@@ -61,7 +68,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/notifications/my", {
+      const res = await fetch("http://127.0.0.1:5000/api/notifications/my", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -73,20 +80,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchInterests = async () => {
+    if (!user || user.role !== "candidate") return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://127.0.0.1:5000/api/interests/my", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInterests(data);
+      }
+    } catch (err) {
+      console.error("Error fetching interests:", err);
+    }
+  };
+
 
   // Fetch Jobs on mount
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/jobs");
+        const res = await fetch("http://127.0.0.1:5000/api/jobs");
         if (res.ok) {
           const data = await res.json();
-          setJobs(data.map((j: any) => ({
+          const sortedJobs = data.map((j: any) => ({
             ...j,
             id: j.id?.toString() || j._id?.toString() || "",
             skills: Array.isArray(j.skills) ? j.skills : (j.mandatory_skills || []),
             created_by: j.created_by || "",
-          })));
+          })).sort((a: any, b: any) => b.id.localeCompare(a.id));
+          setJobs(sortedJobs);
         }
       } catch (err) {
         console.error("Error fetching jobs:", err);
@@ -97,8 +121,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch notifications when user logs in
   useEffect(() => {
-    if (user) fetchNotifications();
-    else setNotifications([]);
+    if (user) {
+      fetchNotifications();
+      fetchInterests();
+    } else {
+      setNotifications([]);
+      setInterests([]);
+    }
   }, [user]);
 
   // Fetch Applications if user is logged in
@@ -111,18 +140,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const headers = { Authorization: `Bearer ${token}` };
 
         if (user.role === "candidate") {
-          const res = await fetch("http://localhost:5000/api/applications/my", { headers });
+          const res = await fetch("http://127.0.0.1:5000/api/applications/my", { headers });
           if (res.ok) {
             const data = await res.json();
             setApplications(data.map((app: any) => ({ ...app, candidateEmail: user.email })));
           }
         } else if (user.role === "hr") {
-          // Simplification: HR fetches applications for all jobs they created
-          // or we can fetch them per job when they click on a job.
-          // Since UI expects all applications in state for Dashboard, let's fetch for all jobs.
+          // HR only fetches applications for jobs THEY created
           let allApps: Application[] = [];
-          for (const job of jobs) {
-            const res = await fetch(`http://localhost:5000/api/applications/job/${job.id}`, { headers });
+          const myJobs = jobs.filter(j => j.created_by === user.id);
+          
+          for (const job of myJobs) {
+            const res = await fetch(`http://127.0.0.1:5000/api/applications/job/${job.id}`, { headers });
             if (res.ok) {
               const data = await res.json();
               allApps = [...allApps, ...data];
@@ -150,8 +179,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       formData.append("title", job.title);
       formData.append("company", job.company);
       formData.append("description", job.description);
-      formData.append("skills", job.skills.join(","));
+      formData.append("skills", (job.skills || []).join(","));
       formData.append("is_benchmark", job.is_benchmark ? "true" : "false");
+      if (job.vacancies !== undefined) {
+        formData.append("vacancies", job.vacancies.toString());
+      }
       
       if (job.logoFile) {
         formData.append("logo", job.logoFile);
@@ -165,7 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         formData.append("banner", job.banner);
       }
 
-      const res = await fetch("http://localhost:5000/api/jobs", {
+      const res = await fetch("http://127.0.0.1:5000/api/jobs", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -175,14 +207,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (res.ok) {
         // Refresh jobs list from server so the new job appears immediately
-        const r = await fetch("http://localhost:5000/api/jobs");
+        const r = await fetch("http://127.0.0.1:5000/api/jobs");
         if (r.ok) {
           const d = await r.json();
-          setJobs(d.map((j: any) => ({ 
+          const sortedJobs = d.map((j: any) => ({ 
             ...j, 
             id: j.id?.toString() || j._id?.toString() || "",
             skills: Array.isArray(j.skills) ? j.skills : (j.mandatory_skills || []),
-          })));
+          })).sort((a: any, b: any) => b.id.localeCompare(a.id));
+          setJobs(sortedJobs);
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -195,31 +228,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const editJob = async (jobId: string, updates: { title: string; description: string; skills: string[] }) => {
+  const editJob = async (jobId: string, updates: { title: string; description: string; logo?: string; banner?: string; logoFile?: File; bannerFile?: File; skills: string[], vacancies?: number }) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+      const formData = new FormData();
+      formData.append("title", updates.title);
+      formData.append("description", updates.description);
+      formData.append("skills", updates.skills.join(","));
+      if (updates.vacancies !== undefined) {
+        formData.append("vacancies", updates.vacancies.toString());
+      }
+      
+      if (updates.logoFile) {
+        formData.append("logo", updates.logoFile);
+      } else if (updates.logo) {
+        formData.append("logo", updates.logo);
+      }
+
+      if (updates.bannerFile) {
+        formData.append("banner", updates.bannerFile);
+      } else if (updates.banner) {
+        formData.append("banner", updates.banner);
+      }
+
+      const res = await fetch(`http://127.0.0.1:5000/api/jobs/${jobId}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: updates.title,
-          description: updates.description,
-          skills: updates.skills.join(","),
-        }),
+        body: formData,
       });
       if (res.ok) {
-        const r = await fetch("http://localhost:5000/api/jobs");
+        const r = await fetch("http://127.0.0.1:5000/api/jobs");
         if (r.ok) {
           const d = await r.json();
-          setJobs(d.map((j: any) => ({
+          const sortedJobs = d.map((j: any) => ({
             ...j,
             id: j.id?.toString() || j._id?.toString() || "",
             skills: Array.isArray(j.skills) ? j.skills : (j.mandatory_skills || []),
             created_by: j.created_by || "",
-          })));
+          })).sort((a: any, b: any) => b.id.localeCompare(a.id));
+          setJobs(sortedJobs);
         }
       } else {
         const err = await res.json().catch(() => ({}));
@@ -234,7 +283,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteJob = async (jobId: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+      const res = await fetch(`http://127.0.0.1:5000/api/jobs/${jobId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -262,7 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const res = await fetch(`http://localhost:5000/api/applications/${jobId}`, {
+      const res = await fetch(`http://127.0.0.1:5000/api/applications/${jobId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -304,21 +353,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateApplicationStatus = async (appId: string, status: Application["status"]) => {
+  const updateApplicationStatus = async (appId: string, status: Application["status"], interviewDate?: string) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/applications/${appId}/status`, {
+      const res = await fetch(`http://127.0.0.1:5000/api/applications/${appId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, interview_date: interviewDate }),
       });
 
       if (res.ok) {
         setApplications((prev) =>
-          prev.map((app) => (app.id === appId ? { ...app, status } : app))
+          prev.map((app) => (app.id === appId ? { ...app, status, interviewDate } : app))
         );
         fetchNotifications();
       }
@@ -335,16 +384,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return applications.filter((app) => app.candidateEmail === email);
   };
 
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://127.0.0.1:5000/api/notifications/${id}/read`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+        );
+      }
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  };
+
   const clearNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/notifications/clear", {
+      await fetch("http://127.0.0.1:5000/api/notifications/clear", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications([]);
     } catch (err) {
       console.error("Error clearing notifications:", err);
+    }
+  };
+
+  const toggleInterest = async (jobId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://127.0.0.1:5000/api/jobs/${jobId}/interest`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.is_interested) {
+          setInterests((prev) => [...prev, jobId]);
+        } else {
+          setInterests((prev) => prev.filter((id) => id !== jobId));
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling interest:", err);
     }
   };
 
@@ -362,7 +448,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getApplicationsForCandidate,
         notifications,
         clearNotifications,
+        markNotificationAsRead,
         refreshNotifications: fetchNotifications,
+        interests,
+        toggleInterest,
       }}
     >
       {children}

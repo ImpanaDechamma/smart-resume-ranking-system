@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
-import { Trophy, Mail, FileText, Medal, Crown, Star } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Trophy, Mail, FileText, Medal, Crown, Star, CheckCircle, XCircle, Clock, Calendar } from "lucide-react";
 
 export default function Rankings({ initialJobId }: { initialJobId?: string }) {
   const { jobs, getApplicationsForJob, updateApplicationStatus } = useApp();
-  // Rankings only applies to live jobs — benchmark simulations don't have real applicants
-  const liveJobs = jobs.filter(job => !job.is_benchmark);
+  const { user } = useAuth();
+
+  // Rankings only applies to live jobs THEY created
+  const liveJobs = jobs.filter(job => !job.is_benchmark && job.created_by === user?.id);
   const [selectedJobId, setSelectedJobId] = useState(initialJobId || liveJobs[0]?.id || "");
 
   useEffect(() => {
@@ -35,41 +38,45 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between bg-card/40 backdrop-blur-xl border border-border/50 p-6 sm:p-8 rounded-3xl shadow-xl shadow-black/5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-primary/10 via-blue-500/5 to-transparent rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-        <div className="relative z-10">
-          <div className="inline-flex p-3 rounded-2xl bg-primary/10 text-primary mb-4">
-            <Trophy className="h-6 w-6" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-foreground tracking-tight">Candidate Rankings</h2>
-          <p className="text-sm font-medium text-muted-foreground mt-1">
-            AI-powered resume scoring to find your perfect match.
-          </p>
-        </div>
+      {/* Premium Rankings Header */}
+      <div className="relative overflow-hidden rounded-[3rem] border border-border/50 bg-card/40 backdrop-blur-xl p-10 md:p-14 shadow-2xl shadow-black/5">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-primary/10 via-blue-500/5 to-transparent rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         
-        <div className="relative z-10 w-full sm:w-72">
-          <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 block">
-            Filter by Job Role
-          </label>
-          <div className="relative">
-            <select
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-border/50 bg-background/50 px-4 py-3.5 text-sm font-bold text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer"
-            >
-          {liveJobs.map((job) => (
-                <option key={job.id} value={job.id} className="font-medium bg-background">
-                  {job.title} - {job.company}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-muted-foreground">
-              <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-              </svg>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-6">
+               <Trophy className="w-3 h-3" />
+               Talent Intelligence
+            </div>
+            <h2 className="text-5xl font-black tracking-tighter text-foreground mb-4">Candidate <span className="text-primary">Rankings.</span></h2>
+            <p className="text-lg font-medium text-muted-foreground max-w-md leading-relaxed">
+              AI-powered resume scoring and skill gap analysis to help you identify top-tier talent instantly.
+            </p>
+          </div>
+          
+          <div className="w-full lg:w-80 space-y-4">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              Select Recruitment Bench
+            </label>
+            <div className="relative group">
+              <select
+                value={selectedJobId}
+                onChange={(e) => setSelectedJobId(e.target.value)}
+                className="w-full appearance-none rounded-[1.5rem] border border-border/50 bg-background/50 px-6 py-4 text-sm font-bold text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer hover:bg-background"
+              >
+                {liveJobs.map((job) => (
+                  <option key={job.id} value={job.id} className="font-medium bg-background">
+                    {job.title} @ {job.company}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-6 text-primary group-hover:scale-110 transition-transform">
+                <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -97,7 +104,7 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
                 <Star className="w-4 h-4 text-amber-500" />
               </h3>
               
-              <div className="flex flex-col md:flex-row items-end justify-center gap-6 px-4">
+              <div className="flex flex-col md:flex-row items-end justify-center gap-6 px-4 pt-16">
                 {/* 2nd Place */}
                 {top3[1] && <PodiumCard app={top3[1]} rank={2} updateApplicationStatus={updateApplicationStatus} />}
                 
@@ -126,41 +133,44 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
                       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary/80 text-muted-foreground font-extrabold text-sm border border-border">
                         #{index + 4}
                       </div>
-                      <div>
-                        <p className="font-extrabold text-foreground text-lg">
-                          {app.candidateName}
-                        </p>
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mt-0.5">
-                          <Mail className="h-3 w-3" />
-                          {app.candidateEmail}
-                          <span className="mx-1">•</span>
-                          {new Date(app.appliedDate).toLocaleDateString()}
-                        </div>
-                        {app.missingSkills && app.missingSkills.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {app.missingSkills.map((skill: string) => (
-                              <span key={skill} className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-600 rounded">
-                                Lacks: {skill}
-                              </span>
-                            ))}
+                      <div className="flex items-center gap-4">
+                        <img 
+                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(app.candidateName)}&background=random&color=fff&size=128`} 
+                          alt={app.candidateName}
+                          className="w-12 h-12 rounded-xl object-cover border border-border/50"
+                        />
+                        <div>
+                          <p className="font-extrabold text-foreground text-lg">
+                            {app.candidateName}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mt-0.5">
+                            <Mail className="h-3 w-3" />
+                            {app.candidateEmail}
+                            <span className="mx-1">•</span>
+                            {new Date(app.appliedDate).toLocaleDateString()}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0">
-                      <div className="flex items-center gap-3 w-full sm:w-48">
-                        <div className="flex-1 h-2.5 overflow-hidden rounded-full bg-secondary/80 shadow-inner">
-                          <div
-                            className={`h-full rounded-full transition-all duration-1000 ${getScoreColor(app.score)}`}
-                            style={{ width: `${app.score}%` }}
-                          />
+                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-6 w-full sm:w-auto">
+                      <div className="flex items-center gap-4">
+                        {app.resumeFile && typeof app.resumeFile === 'string' && (
+                          <a
+                            href={app.resumeFile.startsWith('http') ? app.resumeFile : `http://127.0.0.1:5000/api/resume/view/${app.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary hover:bg-primary/10 hover:text-primary transition-all text-[10px] font-black uppercase tracking-widest"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            Resume
+                          </a>
+                        )}
+                        <div className="text-right">
+                          <p className="text-2xl font-black text-primary leading-none">{app.score}%</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Match</p>
                         </div>
-                        <span className="text-sm font-extrabold text-foreground w-10 text-right">
-                          {app.score}%
-                        </span>
                       </div>
-                      
                       <StatusSelect app={app} updateApplicationStatus={updateApplicationStatus} />
                     </div>
                   </div>
@@ -168,7 +178,6 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
               </div>
             </div>
           )}
-
         </div>
       )}
     </div>
@@ -177,133 +186,146 @@ export default function Rankings({ initialJobId }: { initialJobId?: string }) {
 
 function PodiumCard({ app, rank, updateApplicationStatus }: { app: any, rank: number, updateApplicationStatus: any }) {
   const isFirst = rank === 1;
+  const isSecond = rank === 2;
+  const isThird = rank === 3;
+
   const rankColors = {
     1: "from-amber-500 to-yellow-300 border-amber-400 shadow-amber-500/20 text-amber-700",
     2: "from-slate-400 to-gray-200 border-slate-300 shadow-slate-500/20 text-slate-700",
     3: "from-orange-600 to-amber-700 border-orange-500 shadow-orange-700/20 text-orange-800",
   };
 
-  const bgGlows = {
-    1: "bg-amber-500/5",
-    2: "bg-slate-400/5",
-    3: "bg-orange-600/5",
-  };
-
-  const height = isFirst ? "h-[340px]" : rank === 2 ? "h-[300px]" : "h-[280px]";
-  const order = isFirst ? "order-1 md:order-2" : rank === 2 ? "order-2 md:order-1" : "order-3 md:order-3";
-
   return (
-    <div className={`relative flex flex-col items-center w-full md:w-1/3 max-w-[320px] ${order}`}>
-      {/* Rank Badge Floating */}
-      <div className={`absolute -top-6 z-20 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br shadow-xl border-2 border-background ${rankColors[rank as keyof typeof rankColors]}`}>
-        {rank === 1 ? <Crown className="w-6 h-6 text-white" /> : <Medal className="w-6 h-6 text-white" />}
+    <div className={`relative flex flex-col items-center group transition-all duration-500 ${isFirst ? 'z-30 scale-110 -translate-y-4' : 'z-20 scale-100'} w-full md:w-1/3 max-w-[320px]`}>
+      {/* Crown/Medal */}
+      <div className={`absolute -top-10 left-1/2 -translate-x-1/2 transition-transform duration-500 group-hover:-translate-y-2`}>
+        {isFirst && <Crown className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]" />}
+        {isSecond && <Medal className="w-10 h-10 text-slate-300 drop-shadow-[0_0_15px_rgba(203,213,225,0.5)]" />}
+        {isThird && <Medal className="w-10 h-10 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.5)]" />}
       </div>
 
-      {/* Card Body */}
-      <div className={`w-full flex flex-col justify-between rounded-[2rem] border border-border/50 bg-card/60 backdrop-blur-xl p-6 pt-12 shadow-2xl transition-transform hover:-translate-y-2 ${bgGlows[rank as keyof typeof bgGlows]} ${height}`}>
-        
-        <div className="text-center space-y-1">
-          <h4 className="text-xl font-extrabold text-foreground truncate px-2">{app.candidateName}</h4>
-          <p className="text-xs font-semibold text-muted-foreground truncate">{app.candidateEmail}</p>
-          {app.missingSkills && app.missingSkills.length > 0 && (
-             <div className="flex flex-wrap justify-center gap-1 pt-1">
-               {app.missingSkills.slice(0, 2).map((skill: string) => (
-                 <span key={skill} className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20">
-                   Needs {skill}
-                 </span>
-               ))}
-               {app.missingSkills.length > 2 && (
-                 <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20">+{app.missingSkills.length - 2}</span>
-               )}
-             </div>
-          )}
-        </div>
-
-        <div className="flex flex-col items-center gap-2 my-auto">
-          <div className="text-5xl font-black tracking-tighter">
-            <span className={`bg-gradient-to-br bg-clip-text text-transparent ${rankColors[rank as keyof typeof rankColors]}`}>
-              {app.score}
-            </span>
-            <span className="text-2xl text-muted-foreground ml-1">%</span>
+      <div className={`w-full rounded-[2.5rem] p-8 flex flex-col items-center text-center transition-all border shadow-2xl ${
+        isFirst ? 'bg-primary border-primary/20 text-white shadow-primary/20 min-h-[460px]' : 
+        'bg-card/80 border-border/50 text-foreground shadow-black/5 min-h-[420px]'
+      }`}>
+        <div className="relative mb-6">
+          <div className={`w-24 h-24 rounded-[2rem] p-1 border-2 ${isFirst ? 'border-white/20' : 'border-primary/20'}`}>
+            <img 
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(app.candidateName)}&background=random&color=fff&size=256`} 
+              alt={app.candidateName}
+              className="w-full h-full rounded-[1.8rem] object-cover"
+            />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Match Score</span>
+          <div className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shadow-xl border-2 ${
+            isFirst ? 'bg-white text-primary border-primary' : 'bg-primary text-white border-white'
+          }`}>
+            #{rank}
+          </div>
         </div>
 
-        <div className="w-full">
-          <StatusSelect app={app} updateApplicationStatus={updateApplicationStatus} fullWidth />
+        <h4 className={`text-xl font-black mb-1 line-clamp-1 ${isFirst ? 'text-white' : 'text-foreground'}`}>{app.candidateName}</h4>
+        <p className={`text-[10px] font-black uppercase tracking-widest mb-6 ${isFirst ? 'text-white/60' : 'text-muted-foreground'}`}>Score: {app.score}%</p>
+        
+        <div className="flex flex-col gap-3 w-full mt-auto">
+          {app.resumeFile && (
+            <a
+              href={app.resumeFile.startsWith('http') ? app.resumeFile : `http://127.0.0.1:5000/api/resume/view/${app.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                isFirst ? 'bg-white text-primary shadow-xl hover:bg-white/90' : 'bg-primary text-white shadow-lg hover:bg-primary/90'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              View Resume
+            </a>
+          )}
+          <StatusSelect app={app} updateApplicationStatus={updateApplicationStatus} fullWidth invert={isFirst} />
         </div>
       </div>
     </div>
   );
 }
 
-function StatusSelect({ app, updateApplicationStatus, fullWidth = false }: { app: any, updateApplicationStatus: any, fullWidth?: boolean }) {
+function StatusSelect({ app, updateApplicationStatus, fullWidth = false, invert = false }: { app: any, updateApplicationStatus: any, fullWidth?: boolean, invert?: boolean }) {
   const [saving, setSaving] = useState(false);
-  const [savedStatus, setSavedStatus] = useState(app.status);
-  const [flash, setFlash] = useState<'success' | 'error' | null>(null);
-
-  const handleChange = async (newStatus: string) => {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [interviewDate, setInterviewDate] = useState("");
+  
+  const handleStatus = async (status: string, date?: string) => {
     setSaving(true);
-    setFlash(null);
-    const prev = savedStatus;
-    setSavedStatus(newStatus); // optimistic update
-    try {
-      await updateApplicationStatus(app.id, newStatus);
-      setFlash('success');
-    } catch {
-      setSavedStatus(prev); // revert on error
-      setFlash('error');
-    } finally {
-      setSaving(false);
-      setTimeout(() => setFlash(null), 2000);
-    }
+    await updateApplicationStatus(app.id, status, date);
+    setSaving(false);
+    setShowDatePicker(false);
   };
 
+  const status = app.status || "pending";
+
   return (
-    <div className={`relative ${fullWidth ? 'w-full' : 'w-40'}`}>
-      <select
-        value={savedStatus}
-        onChange={(e) => handleChange(e.target.value)}
-        disabled={saving}
-        className={`appearance-none rounded-xl border px-4 py-2.5 text-xs font-extrabold uppercase tracking-widest transition-all focus:outline-none focus:ring-4 cursor-pointer text-center w-full ${saving ? 'opacity-50 cursor-wait' : ''} ${getStatusSelectStyles(savedStatus)}`}
-      >
-        <option value="pending" className="font-bold">Pending</option>
-        <option value="reviewed" className="font-bold">Reviewed</option>
-        <option value="shortlisted" className="font-bold">Shortlisted</option>
-        <option value="rejected" className="font-bold">Rejected</option>
-      </select>
-      {saving && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin opacity-50" />
+    <div className={`flex flex-col gap-4 w-full`}>
+      <div className="grid grid-cols-2 gap-3 w-full">
+        <button
+          onClick={() => status === "shortlisted" ? handleStatus("pending") : setShowDatePicker(!showDatePicker)}
+          disabled={saving}
+          className={`py-3.5 px-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-1.5 shadow-sm ${
+            status === "shortlisted" 
+            ? (invert ? 'bg-white text-primary' : 'bg-emerald-500 text-white') 
+            : (invert ? 'bg-white/20 border-white/30 text-white hover:bg-white/30' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/20')
+          }`}
+        >
+          <CheckCircle className="w-4 h-4" />
+          {status === "shortlisted" ? "Shortlisted" : "Shortlist"}
+        </button>
+        <button
+          onClick={() => handleStatus("rejected")}
+          disabled={saving}
+          className={`py-3.5 px-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-1.5 shadow-sm ${
+            status === "rejected" 
+            ? (invert ? 'bg-white text-primary' : 'bg-red-500 text-white') 
+            : (invert ? 'bg-white/20 border-white/30 text-white hover:bg-white/30' : 'bg-red-500/10 border-red-500/20 text-red-600 hover:bg-red-500/20')
+          }`}
+        >
+          <XCircle className="w-4 h-4" />
+          Reject
+        </button>
+      </div>
+
+      {showDatePicker && (
+        <div className={`p-5 rounded-[2rem] border animate-in zoom-in-95 slide-in-from-top-4 duration-500 ${invert ? 'bg-white text-primary shadow-2xl' : 'bg-card border-border/50 shadow-xl'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[9px] font-black uppercase tracking-widest opacity-80">Interview Date</p>
+            <Calendar className="w-3.5 h-3.5 opacity-50" />
+          </div>
+          
+          <div className="space-y-3">
+            <input 
+              type="date"
+              value={interviewDate}
+              onChange={(e) => setInterviewDate(e.target.value)}
+              className={`w-full p-3 rounded-xl text-[10px] font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all ${invert ? 'bg-secondary/50 border border-primary/10' : 'bg-secondary/30 border border-transparent focus:border-primary/20'}`}
+            />
+            <button 
+              onClick={() => handleStatus("shortlisted", interviewDate)}
+              disabled={!interviewDate || saving}
+              className="w-full py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       )}
-      {flash === 'success' && (
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg whitespace-nowrap shadow-sm animate-in fade-in duration-200">
-          ✓ Saved · Candidate notified
-        </div>
-      )}
-      {flash === 'error' && (
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-lg whitespace-nowrap shadow-sm">
-          ✗ Failed to save
+
+      {app.interviewDate && (
+        <div className={`flex items-center gap-3 p-4 rounded-2xl border ${invert ? 'bg-white/10 border-white/20 text-white' : 'bg-primary/5 border-primary/10 text-primary'}`}>
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${invert ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
+            <Calendar className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-70">Scheduled Interview</span>
+            <span className="text-xs font-black">{new Date(app.interviewDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          </div>
         </div>
       )}
     </div>
   );
-}
-
-function getScoreColor(score: number): string {
-  if (score >= 90) return "bg-emerald-500";
-  if (score >= 80) return "bg-primary";
-  if (score >= 70) return "bg-blue-500";
-  return "bg-amber-500";
-}
-
-function getStatusSelectStyles(status: string): string {
-  const styles: Record<string, string> = {
-    pending: "border-amber-500/20 bg-amber-500/10 text-amber-600 focus:border-amber-500 focus:ring-amber-500/20",
-    reviewed: "border-blue-500/20 bg-blue-500/10 text-blue-600 focus:border-blue-500 focus:ring-blue-500/20",
-    shortlisted: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 focus:border-emerald-500 focus:ring-emerald-500/20",
-    rejected: "border-red-500/20 bg-red-500/10 text-red-600 focus:border-red-500 focus:ring-red-500/20",
-  };
-  return styles[status] || "";
 }

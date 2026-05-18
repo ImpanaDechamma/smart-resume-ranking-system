@@ -30,7 +30,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
           <div className="w-10 h-10 rounded-xl bg-[#92C7CF] flex items-center justify-center shadow-lg shadow-[#92C7CF]/20">
             <FileText className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-black tracking-tighter">CareerAI</span>
+          <span className="text-xl font-black tracking-tighter">ResumeRank</span>
         </div>
         
         <div className="hidden md:flex items-center gap-12 text-[13px] font-black uppercase tracking-[0.2em] text-[#2D3250]">
@@ -237,7 +237,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                 <div className="w-10 h-10 rounded-xl bg-[#92C7CF] flex items-center justify-center">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-black tracking-tighter">CareerAI</span>
+                <span className="text-xl font-black tracking-tighter">ResumeRank</span>
               </div>
               <p className="text-lg font-medium opacity-40 max-w-sm leading-relaxed">
                 Elevating the standard of recruitment through clean design and intelligent algorithms.
@@ -264,7 +264,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
           </div>
           
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 pt-8 border-t border-[#92C7CF]/10">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-30">© 2026 CareerAI. All rights reserved.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-30">© 2026 ResumeRank. All rights reserved.</p>
             <div className="flex gap-12 text-[10px] font-black uppercase tracking-widest opacity-30">
               <a href="#" className="hover:opacity-100 transition-opacity">Privacy Policy</a>
               <a href="#" className="hover:opacity-100 transition-opacity">Terms of Service</a>

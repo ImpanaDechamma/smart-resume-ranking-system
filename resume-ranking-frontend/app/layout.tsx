@@ -6,7 +6,7 @@ const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Smart Resume Ranking System',
+  title: 'ResumeRank',
   description: 'AI-powered resume screening and candidate ranking platform',
 }
 

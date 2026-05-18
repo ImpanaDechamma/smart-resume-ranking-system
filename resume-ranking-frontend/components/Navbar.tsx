@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { FileText, LayoutDashboard, Briefcase, ClipboardList, BarChart3, LogOut, Bell } from "lucide-react";
+import { FileText, LayoutDashboard, Briefcase, ClipboardList, BarChart3, LogOut, Bell, Sparkles, CheckCircle, Info, Mail } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useState } from "react";
 
@@ -12,127 +12,159 @@ interface NavbarProps {
 
 export default function Navbar({ page, setPage }: NavbarProps) {
   const { user, logout } = useAuth();
-  const { notifications, clearNotifications } = useApp();
+  const { notifications, clearNotifications, markNotificationAsRead } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
   const isHR = user?.role === "hr";
 
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.is_read).length : 0;
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4 pointer-events-none">
-      <header className="pointer-events-auto bg-background/60 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-full shadow-2xl shadow-black/10 flex items-center justify-between px-6 py-3 transition-all duration-500 hover:bg-background/80 hover:shadow-primary/20">
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 pointer-events-none">
+      <header className="pointer-events-auto bg-white/70 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex items-center justify-between px-8 py-3.5 transition-all duration-500">
         
-        {/* Logo */}
-        <div className="flex items-center gap-4">
+        {/* Brand */}
+        <div className="flex items-center gap-6">
           <button
             onClick={() => setPage(isHR ? "dashboard" : "jobs")}
-            className="flex items-center gap-2 group transition-transform hover:scale-105"
+            className="flex items-center gap-3 group"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary shadow-sm">
+            <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-primary shadow-lg shadow-primary/20">
               <FileText className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-foreground group-hover:text-primary transition-colors hidden sm:block">
-              CareerAI
+            <span className="text-xl font-black tracking-tight text-foreground">
+              ResumeRank
             </span>
           </button>
           
-          <div className="hidden md:flex px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border/50">
             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">
-              Simulation
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+              Sim
             </span>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex items-center gap-1 bg-secondary/30 rounded-full p-1 border border-border/50">
-          {isHR && (
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center gap-2">
+          {isHR ? (
             <>
-              <NavButton
-                active={page === "dashboard"}
-                onClick={() => setPage("dashboard")}
-                icon={<LayoutDashboard className="h-4 w-4" />}
-                label="Dashboard"
-              />
-              <NavButton
-                active={page === "jobs"}
-                onClick={() => setPage("jobs")}
-                icon={<Briefcase className="h-4 w-4" />}
-                label="Benchmarks"
-              />
-              <NavButton
-                active={page === "rankings"}
-                onClick={() => setPage("rankings")}
-                icon={<BarChart3 className="h-4 w-4" />}
-                label="Rankings"
-              />
+              <NavButton active={page === "dashboard"} onClick={() => setPage("dashboard")} label="Stats" />
+              <NavButton active={page === "jobs"} onClick={() => setPage("jobs")} label="Benchmarks" />
+              <NavButton active={page === "rankings"} onClick={() => setPage("rankings")} label="Rankings" />
             </>
-          )}
-          {!isHR && (
+          ) : (
             <>
-              <NavButton
-                active={page === "jobs"}
-                onClick={() => setPage("jobs")}
-                icon={<Briefcase className="h-4 w-4" />}
-                label="Benchmarks"
-              />
-              <NavButton
-                active={page === "my-applications"}
-                onClick={() => setPage("my-applications")}
-                icon={<ClipboardList className="h-4 w-4" />}
-                label="My Applications"
-              />
+              <NavButton active={page === "jobs"} onClick={() => setPage("jobs")} label="Explore" />
+              <NavButton active={page === "my-applications"} onClick={() => setPage("my-applications")} label="Applications" />
             </>
           )}
         </nav>
 
         {/* User Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {/* Notification Bell */}
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
-                notifications.length > 0 
-                ? "bg-primary/10 text-primary animate-pulse" 
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all ${
+                unreadCount > 0 
+                ? "bg-primary text-white shadow-lg shadow-primary/30" 
+                : "bg-secondary/50 text-muted-foreground hover:bg-white hover:text-primary"
               }`}
             >
-              <Bell className="h-4 w-4" />
-              {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-background rounded-full" />
+              <Bell className={`h-5 w-5 ${unreadCount > 0 ? 'animate-bounce' : ''}`} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-[10px] font-black text-white border-4 border-white shadow-xl">
+                  {unreadCount}
+                </span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="absolute top-12 right-0 w-80 bg-card/90 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl z-[70] p-4 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold text-foreground">Notifications</h4>
+              <div className="absolute top-12 right-0 w-96 bg-white/95 backdrop-blur-2xl border border-border/50 rounded-[2rem] shadow-2xl z-[70] p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="text-sm font-black text-foreground uppercase tracking-widest">Notifications</h4>
                   <button 
                     onClick={clearNotifications}
-                    className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline"
+                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
                   >
                     Clear all
                   </button>
                 </div>
-                <div className="space-y-3">
-                  {notifications.length > 0 ? (
-                    notifications.map((n) => (
-                      <div key={n.id} className="p-3 rounded-xl bg-secondary/30 border border-border/50">
-                        <p className="text-xs font-bold text-foreground">{n.title}</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">{n.message}</p>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {safeNotifications.length > 0 ? (
+                    safeNotifications.map((n) => (
+                      <div 
+                        key={n.id || Math.random().toString()} 
+                        onMouseEnter={() => !n.is_read && markNotificationAsRead(n.id)}
+                        className={`p-5 rounded-[2rem] border transition-all relative overflow-hidden group ${
+                          !n.is_read 
+                          ? "bg-white border-primary shadow-xl ring-4 ring-primary/5" 
+                          : "bg-secondary/10 border-transparent opacity-60"
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                             n.type === 'status_update' ? 'bg-emerald-500/10 text-emerald-600' :
+                             n.type === 'application_submitted' ? 'bg-primary/10 text-primary' :
+                             'bg-violet-500/10 text-violet-600'
+                           }`}>
+                              {n.type === 'status_update' ? <CheckCircle className="w-5 h-5" /> :
+                               n.type === 'application_submitted' ? <Mail className="w-5 h-5" /> :
+                               <Sparkles className="w-5 h-5" />}
+                           </div>
+                           
+                           <div className="flex-1">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex flex-col">
+                                   {!n.is_read && (
+                                     <span className="inline-flex items-center w-fit px-1.5 py-0.5 rounded-full bg-red-600 text-[8px] font-black text-white uppercase tracking-widest mb-1">New</span>
+                                   )}
+                                   <p className={`text-[12px] font-black leading-tight ${!n.is_read ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                     {n.title || (n.type === 'status_update' ? 'Status Update' : 'Career Alert')}
+                                   </p>
+                                </div>
+                                <span className="text-[9px] font-bold text-muted-foreground/60 whitespace-nowrap ml-4">
+                                  {n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </span>
+                              </div>
+                              <p className={`text-[11px] font-medium leading-relaxed ${!n.is_read ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
+                                {n.message}
+                              </p>
+                           </div>
+                        </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-center text-muted-foreground py-4">No new notifications</p>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <p className="text-[10px] font-bold text-muted-foreground italic">Inbox is empty</p>
+                    </div>
                   )}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="h-8 w-[1px] bg-border/50 hidden md:block" />
+          <div className="h-6 w-[1px] bg-border/50 mx-1" />
+
+          <button
+            onClick={() => setPage("profile")}
+            className={`flex items-center gap-3 p-1 pr-4 rounded-2xl transition-all ${page === 'profile' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'hover:bg-secondary/50'}`}
+          >
+            <div className="h-8 w-8 rounded-xl overflow-hidden border-2 border-white shadow-sm">
+              <img 
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "U")}&background=${isHR ? '007bff' : 'ff5722'}&color=fff`} 
+                alt="Profile" 
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <span className="text-xs font-black uppercase tracking-widest hidden lg:inline">Profile</span>
+          </button>
+
           <button
             onClick={logout}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary/50 text-muted-foreground hover:bg-destructive hover:text-white hover:shadow-lg hover:shadow-destructive/30 transition-all group"
+            className="flex items-center justify-center w-10 h-10 rounded-2xl bg-secondary/50 text-muted-foreground hover:bg-destructive hover:text-white hover:shadow-lg hover:shadow-destructive/30 transition-all group"
             title="Logout"
           >
             <LogOut className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
@@ -146,25 +178,22 @@ export default function Navbar({ page, setPage }: NavbarProps) {
 function NavButton({
   active,
   onClick,
-  icon,
   label,
 }: {
   active: boolean;
   onClick: () => void;
-  icon: React.ReactNode;
   label: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+      className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
         active
-          ? "bg-primary text-white shadow-md shadow-primary/30 scale-100"
-          : "text-muted-foreground hover:bg-background/80 hover:text-foreground scale-95 hover:scale-100"
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
       }`}
     >
-      {icon}
-      <span className="hidden lg:inline">{label}</span>
+      {label}
     </button>
   );
 }
